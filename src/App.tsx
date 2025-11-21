@@ -4,6 +4,7 @@ import { UtensilsCrossed, DollarSign, ArrowRight } from 'lucide-react';
 import { FilterSection } from './components/filter-section';
 import { LocationSearch } from './components/location-search';
 import { ShareView } from './components/share-view';
+import { SwipeView, Restaurant } from './components/swipe-view';
 import { Toaster } from 'sonner@2.0.3';
 
 const cuisineOptions = [
@@ -34,8 +35,139 @@ const costOptions = [
   { label: '$$$$', value: 4, desc: 'Luxury' },
 ];
 
+const mockRestaurants: Restaurant[] = [
+  {
+    id: 1,
+    name: 'Neon Ramen House',
+    cuisine: 'Asian',
+    location: 'Downtown',
+    cost: 2,
+    rating: 4.8,
+    reviews: 432,
+    image: 'asian ramen restaurant',
+    tags: ['Late Night', 'Instagram-worthy'],
+    topDishes: ['Spicy Miso Ramen', 'Pork Buns', 'Gyoza', 'Matcha Ice Cream'],
+    userReviews: [
+      { user: 'Sarah J.', rating: 5, text: 'Best ramen in the city! The broth is incredibly rich and flavorful.' },
+      { user: 'Mike T.', rating: 4, text: 'Great vibe, but expect a wait on weekends.' }
+    ]
+  },
+  {
+    id: 2,
+    name: 'The Verde Garden',
+    cuisine: 'Healthy',
+    location: 'SoHo',
+    cost: 3,
+    rating: 4.6,
+    reviews: 289,
+    image: 'healthy restaurant salad bowl',
+    tags: ['Vegan Options', 'Organic'],
+    topDishes: ['Quinoa Power Bowl', 'Avocado Toast', 'Green Smoothie', 'Falafel Wrap'],
+    userReviews: [
+      { user: 'Jessica L.', rating: 5, text: 'So many delicious vegan options. The avocado toast is a must-try.' },
+      { user: 'David R.', rating: 4, text: 'Fresh ingredients and nice atmosphere.' }
+    ]
+  },
+  {
+    id: 3,
+    name: 'Taco Fuego',
+    cuisine: 'Mexican',
+    location: 'Brooklyn',
+    cost: 1,
+    rating: 4.9,
+    reviews: 721,
+    image: 'mexican tacos restaurant',
+    tags: ['Spicy', 'Casual Vibe'],
+    topDishes: ['Al Pastor Tacos', 'Street Corn', 'Guacamole', 'Churros'],
+    userReviews: [
+      { user: 'Carlos M.', rating: 5, text: 'Authentic street tacos. The al pastor is amazing!' },
+      { user: 'Emily W.', rating: 5, text: 'Incredible value for the quality. Love this place.' }
+    ]
+  },
+  {
+    id: 4,
+    name: 'Bella Notte',
+    cuisine: 'Italian',
+    location: 'Midtown',
+    cost: 3,
+    rating: 4.7,
+    reviews: 564,
+    image: 'italian pizza restaurant',
+    tags: ['Romantic', 'Date Night'],
+    topDishes: ['Truffle Pasta', 'Margherita Pizza', 'Tiramisu', 'Burrata'],
+    userReviews: [
+      { user: 'Amanda K.', rating: 5, text: 'Perfect spot for a date night. The pasta is handmade and delicious.' },
+      { user: 'John D.', rating: 4, text: 'A bit pricey, but worth it for the ambiance and food quality.' }
+    ]
+  },
+  {
+    id: 5,
+    name: 'Burger Collective',
+    cuisine: 'American',
+    location: 'Chelsea',
+    cost: 2,
+    rating: 4.5,
+    reviews: 892,
+    image: 'gourmet burger restaurant',
+    tags: ['Craft Beer', 'Group Friendly'],
+    topDishes: ['The Classic Burger', 'Truffle Fries', 'Milkshakes', 'Onion Rings'],
+    userReviews: [
+      { user: 'Chris P.', rating: 5, text: 'Best burgers in town hands down. Great beer selection too.' },
+      { user: 'Lisa M.', rating: 4, text: 'Crowded and loud, but the food is fantastic.' }
+    ]
+  },
+  {
+    id: 6,
+    name: 'Sakura Omakase',
+    cuisine: 'Japanese',
+    location: 'Upper East',
+    cost: 4,
+    rating: 4.9,
+    reviews: 201,
+    image: 'japanese sushi omakase',
+    tags: ['Reservation Only', 'Fine Dining'],
+    topDishes: ['Omakase Set', 'Toro Sashimi', 'Uni', 'Wagyu Beef'],
+    userReviews: [
+      { user: 'Kenji Y.', rating: 5, text: 'An unforgettable dining experience. The fish is incredibly fresh.' },
+      { user: 'Rachel S.', rating: 5, text: 'Expensive but absolutely worth every penny for special occasions.' }
+    ]
+  },
+  {
+    id: 7,
+    name: 'Seoul BBQ',
+    cuisine: 'Korean',
+    location: 'Queens',
+    cost: 3,
+    rating: 4.7,
+    reviews: 350,
+    image: 'korean bbq restaurant',
+    tags: ['Interactive', 'Group Friendly'],
+    topDishes: ['Galbi', 'Bulgogi', 'Kimchi Pancake', 'Bibimbap'],
+    userReviews: [
+      { user: 'Hannah K.', rating: 5, text: 'Fun experience grilling your own meat. Great for groups!' },
+      { user: 'Tom H.', rating: 4, text: 'Delicious sides (banchan) and high quality meat.' }
+    ]
+  },
+  {
+    id: 8,
+    name: 'Le Petit Bistro',
+    cuisine: 'French',
+    location: 'West Village',
+    cost: 3,
+    rating: 4.6,
+    reviews: 410,
+    image: 'french bistro restaurant',
+    tags: ['Cozy', 'Brunch'],
+    topDishes: ['Steak Frites', 'Onion Soup', 'Escargot', 'Croque Madame'],
+    userReviews: [
+      { user: 'Sophie B.', rating: 5, text: 'Feels like a little slice of Paris. The steak frites is perfect.' },
+      { user: 'Mark L.', rating: 4, text: 'Charming atmosphere and excellent service.' }
+    ]
+  }
+];
+
 export default function App() {
-  const [view, setView] = useState<'filters' | 'share'>('filters');
+  const [view, setView] = useState<'filters' | 'share' | 'swipe'>('filters');
   const [shareUrl, setShareUrl] = useState('');
   
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
@@ -75,11 +207,48 @@ export default function App() {
   const activeFiltersCount =
     selectedCuisines.length + selectedLocations.length + selectedCosts.length;
 
+  // Filter restaurants based on selection for the swipe view
+  // If no filters are selected, show all
+  const filteredRestaurants = mockRestaurants.filter(restaurant => {
+    // Parse cuisine from the restaurant string (e.g. "🍜 Asian") vs selected (e.g. "Asian")
+    // The mock data has clean strings "Asian", "Italian" etc. 
+    // The options have emojis "🍜 Asian". We need to match these.
+    
+    // Simple match: check if any selected cuisine string contains the restaurant cuisine
+    const matchesCuisine = selectedCuisines.length === 0 || selectedCuisines.some(c => c.includes(restaurant.cuisine));
+    
+    // Location match (exact or partial since options are cities)
+    const matchesLocation = selectedLocations.length === 0 || selectedLocations.some(l => restaurant.location.includes(l) || l.includes(restaurant.location));
+    
+    const matchesCost = selectedCosts.length === 0 || selectedCosts.includes(restaurant.cost);
+    
+    return matchesCuisine && matchesLocation && matchesCost;
+  });
+
+  // If filtering results in 0, show all (fallback) so the swipe view isn't empty
+  const restaurantsToSwipe = filteredRestaurants.length > 0 ? filteredRestaurants : mockRestaurants;
+
   if (view === 'share') {
     return (
       <>
         <Toaster position="top-center" />
-        <ShareView url={shareUrl} onBack={() => setView('filters')} />
+        <ShareView 
+          url={shareUrl} 
+          onBack={() => setView('filters')} 
+          onStartSession={() => setView('swipe')}
+        />
+      </>
+    );
+  }
+
+  if (view === 'swipe') {
+    return (
+      <>
+        <Toaster position="top-center" />
+        <SwipeView 
+          restaurants={restaurantsToSwipe} 
+          onBack={() => setView('filters')} 
+        />
       </>
     );
   }

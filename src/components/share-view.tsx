@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Copy, Check, Users, ArrowLeft, Share2 } from 'lucide-react';
+import { Copy, Check, Users, ArrowLeft, Share2, Play, Minus, Plus } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { toast } from 'sonner@2.0.3';
@@ -8,10 +8,12 @@ import { toast } from 'sonner@2.0.3';
 interface ShareViewProps {
   url: string;
   onBack: () => void;
+  onStartSession: () => void;
 }
 
-export function ShareView({ url, onBack }: ShareViewProps) {
+export function ShareView({ url, onBack, onStartSession }: ShareViewProps) {
   const [copied, setCopied] = useState(false);
+  const [participants, setParticipants] = useState(2);
 
   const handleCopy = async () => {
     try {
@@ -26,7 +28,7 @@ export function ShareView({ url, onBack }: ShareViewProps) {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <header className="p-4">
+      <header className="p-4 sticky top-0 bg-white z-10">
         <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full hover:bg-gray-100">
           <ArrowLeft className="size-6 text-gray-600" />
         </Button>
@@ -99,6 +101,46 @@ export function ShareView({ url, onBack }: ShareViewProps) {
           >
             <Share2 className="size-5" />
             {copied ? 'Copied Link!' : 'Copy Link'}
+          </Button>
+          
+          {/* Spacer with no OR */}
+          <div className="h-4" />
+
+          {/* Participants Counter */}
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 text-gray-700">
+              <Users className="size-5 text-gray-400" />
+              <span className="font-medium">Group Size</span>
+            </div>
+            <div className="flex items-center gap-4 bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-md hover:bg-gray-100"
+                onClick={() => setParticipants(Math.max(2, participants - 1))}
+                disabled={participants <= 2}
+              >
+                <Minus className="size-4" />
+              </Button>
+              <span className="font-bold w-4 text-center text-gray-900">{participants}</span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-md hover:bg-gray-100"
+                onClick={() => setParticipants(participants + 1)}
+              >
+                <Plus className="size-4" />
+              </Button>
+            </div>
+          </div>
+
+          <Button 
+             variant="outline"
+             className="w-full h-14 text-lg font-semibold border-2 border-red-100 text-red-600 hover:bg-red-50 hover:border-red-200 hover:text-red-700 rounded-xl gap-2"
+             onClick={onStartSession}
+          >
+             <Play className="size-5 fill-current" />
+             Start Session
           </Button>
         </motion.div>
       </main>
