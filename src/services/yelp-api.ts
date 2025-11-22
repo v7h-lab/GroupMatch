@@ -7,6 +7,8 @@ interface UserPreferences {
   cuisines: string[];
   locations: string[];
   costs: number[];
+  date?: string;
+  time?: string;
 }
 
 interface YelpBusiness {

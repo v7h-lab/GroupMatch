@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { UtensilsCrossed, DollarSign, ArrowRight } from 'lucide-react';
+import { UtensilsCrossed, DollarSign, ArrowRight, ArrowLeft } from 'lucide-react';
 import { FilterSection } from './components/filter-section';
 import { LocationSearch } from './components/location-search';
+import { DateTimePicker } from './components/date-time-picker';
 import { ShareView } from './components/share-view';
 import { WaitingView } from './components/waiting-view';
 import { SwipeView, Restaurant } from './components/swipe-view';
@@ -170,8 +171,11 @@ const mockRestaurants: Restaurant[] = [
 
 export default function App() {
   const [view, setView] = useState<'filters' | 'share' | 'waiting' | 'swipe'>('filters');
+  const [filterStep, setFilterStep] = useState<1 | 2>(1);
   const [shareUrl, setShareUrl] = useState('');
 
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedCosts, setSelectedCosts] = useState<number[]>([]);
@@ -203,14 +207,22 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ... existing toggleFilter, addLocation, removeLocation ...
+  const handleNextStep = () => {
+    if (filterStep === 1) {
+      setFilterStep(2);
+    } else {
+      // Generate a mock unique URL
+      const uniqueId = Math.random().toString(36).substring(2, 8);
+      const url = `https://yelpclone.app/group/${uniqueId}`;
+      setShareUrl(url);
+      setView('share');
+    }
+  };
 
-  const handleNext = () => {
-    // Generate a mock unique URL
-    const uniqueId = Math.random().toString(36).substring(2, 8);
-    const url = `https://yelpclone.app/group/${uniqueId}`;
-    setShareUrl(url);
-    setView('share');
+  const handleBackStep = () => {
+    if (filterStep === 2) {
+      setFilterStep(1);
+    }
   };
 
   const handleStartSession = async (count: number) => {
@@ -225,7 +237,9 @@ export default function App() {
       const results = await fetchRestaurants({
         cuisines: selectedCuisines,
         locations: selectedLocations,
-        costs: selectedCosts
+        costs: selectedCosts,
+        date: selectedDate,
+        time: selectedTime
       });
       setFetchedRestaurants(results);
       if (results.length === 0) {
@@ -244,13 +258,9 @@ export default function App() {
     selectedCuisines.length + selectedLocations.length + selectedCosts.length;
 
   // Use fetched restaurants if available, otherwise filter mock data as fallback
-  // If API was called and returned results, use them.
-  // If API failed or hasn't been called yet (and we are somehow in swipe view), use mock.
   const restaurantsToUse = fetchedRestaurants.length > 0 ? fetchedRestaurants : mockRestaurants;
 
-  // Filter restaurants based on selection for the swipe view (only if using mock data or client-side filtering desired)
-  // Since API handles filtering, we might just use the results directly.
-  // But if we fallback to mock, we still want to filter.
+  // Filter restaurants based on selection for the swipe view (only if using mock data)
   const filteredRestaurants = restaurantsToUse === mockRestaurants
     ? mockRestaurants.filter(restaurant => {
       const matchesCuisine = selectedCuisines.length === 0 || selectedCuisines.some(c => c.includes(restaurant.cuisine));
@@ -260,7 +270,6 @@ export default function App() {
     })
     : restaurantsToUse;
 
-  // If filtering results in 0, show all (fallback) so the swipe view isn't empty
   const restaurantsToSwipe = filteredRestaurants.length > 0 ? filteredRestaurants : mockRestaurants;
 
   if (view === 'share') {
@@ -284,8 +293,10 @@ export default function App() {
           filters={{
             cuisine: selectedCuisines,
             location: selectedLocations,
-            cost: selectedCosts
+            cost: selectedCosts,
           }}
+          date={selectedDate}
+          time={selectedTime}
           totalParticipants={sessionParticipants}
           onStart={() => setView('swipe')}
           onBack={() => setView('share')}
@@ -332,6 +343,8 @@ export default function App() {
                   setSelectedCuisines([]);
                   setSelectedLocations([]);
                   setSelectedCosts([]);
+                  setSelectedDate('');
+                  setSelectedTime('');
                 }}
                 className="text-sm font-medium text-red-600 hover:text-red-700 transition-colors"
               >
@@ -345,61 +358,97 @@ export default function App() {
       <div className="mx-auto px-4 py-6 max-w-md">
         {/* Filters */}
         <div className="space-y-4 mb-6">
-          <FilterSection
-            title="Cuisine"
-            icon={<UtensilsCrossed className="size-4" />}
-            options={cuisineOptions}
-            selected={selectedCuisines}
-            onToggle={(value) => toggleFilter(value, selectedCuisines, setSelectedCuisines)}
-          />
+          {filterStep === 1 ? (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-4"
+            >
+              <DateTimePicker
+                date={selectedDate}
+                time={selectedTime}
+                onDateChange={setSelectedDate}
+                onTimeChange={setSelectedTime}
+              />
+              <LocationSearch
+                selectedLocations={selectedLocations}
+                onAddLocation={addLocation}
+                onRemoveLocation={removeLocation}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-4"
+            >
+              <FilterSection
+                title="Cuisine"
+                icon={<UtensilsCrossed className="size-4" />}
+                options={cuisineOptions}
+                selected={selectedCuisines}
+                onToggle={(value) => toggleFilter(value, selectedCuisines, setSelectedCuisines)}
+              />
 
-          <LocationSearch
-            selectedLocations={selectedLocations}
-            onAddLocation={addLocation}
-            onRemoveLocation={removeLocation}
-          />
-
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="bg-red-600 p-1.5 rounded-lg">
-                <DollarSign className="size-4 text-white" />
-              </div>
-              <span className="font-semibold text-gray-900">Price Range</span>
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {costOptions.map((option) => (
-                <motion.button
-                  key={option.value}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => toggleFilter(option.value, selectedCosts, setSelectedCosts)}
-                  className={`px-2 py-3 rounded-xl transition-all ${selectedCosts.includes(option.value)
-                    ? 'bg-red-600 text-white shadow-lg shadow-red-200'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                    }`}
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="font-medium">{option.label}</span>
-                    <span className="text-xs opacity-80">{option.desc}</span>
+              <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="bg-red-600 p-1.5 rounded-lg">
+                    <DollarSign className="size-4 text-white" />
                   </div>
-                </motion.button>
-              ))}
-            </div>
-          </div>
+                  <span className="font-semibold text-gray-900">Price Range</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {costOptions.map((option) => (
+                    <motion.button
+                      key={option.value}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => toggleFilter(option.value, selectedCosts, setSelectedCosts)}
+                      className={`px-2 py-3 rounded-xl transition-all ${selectedCosts.includes(option.value)
+                        ? 'bg-red-600 text-white shadow-lg shadow-red-200'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        }`}
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="font-medium">{option.label}</span>
+                        <span className="text-xs opacity-80">{option.desc}</span>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
 
-      {/* Floating Action Button - Next */}
-      <div className="fixed bottom-6 left-0 right-0 flex justify-center px-4 z-40 pointer-events-none">
+      {/* Navigation Buttons */}
+      <div className="fixed bottom-6 left-0 right-0 flex justify-center px-4 z-40 pointer-events-none gap-4">
+        {filterStep === 2 && (
+          <motion.button
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleBackStep}
+            className="pointer-events-auto bg-white text-gray-700 px-6 py-4 rounded-full shadow-lg border border-gray-200 flex items-center gap-2 font-semibold text-lg"
+          >
+            <ArrowLeft className="size-5" />
+            <span>Back</span>
+          </motion.button>
+        )}
+
         <motion.button
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={handleNext}
+          onClick={handleNextStep}
           className="pointer-events-auto bg-red-600 text-white px-8 py-4 rounded-full shadow-xl shadow-red-200 flex items-center gap-3 font-semibold text-lg"
         >
-          <span>Next</span>
+          <span>{filterStep === 1 ? 'Next' : 'Next'}</span>
           <ArrowRight className="size-5" />
         </motion.button>
       </div>
