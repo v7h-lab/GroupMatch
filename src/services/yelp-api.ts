@@ -7,6 +7,8 @@ interface UserPreferences {
   cuisines: string[];
   locations: string[];
   costs: number[];
+  date?: string;
+  time?: string;
 }
 
 interface YelpBusiness {
@@ -27,8 +29,16 @@ interface YelpBusiness {
 interface YelpAIResponse {
   response: {
     text: string;
+    tags?: Array<{
+      tag_type: string;
+      start: number;
+      end: number;
+      meta?: {
+        business_id?: string;
+      };
+    }>;
   };
-  entities?: any[]; // Entities is an array of objects
+  entities: any[]; // Entities is an array of objects
 }
 
 export async function fetchRestaurants(preferences: UserPreferences): Promise<Restaurant[]> {
@@ -88,26 +98,61 @@ export async function fetchRestaurants(preferences: UserPreferences): Promise<Re
     }
 
     const data: YelpAIResponse = await response.json();
-    console.log('Yelp API Data:', JSON.stringify(data, null, 2));
+    console.log('Full Yelp API Response:', JSON.stringify(data, null, 2));
+    console.log('Entities array:', data.entities);
 
-    let businesses: any[] = [];
-
-    if (Array.isArray(data.entities)) {
-      for (const entity of data.entities) {
-        if (entity.type === 'business') {
-          businesses.push(entity);
-        } else if (entity.businesses && Array.isArray(entity.businesses)) {
-          businesses.push(...entity.businesses);
-        }
-      }
-    } else if ((data.entities as any)?.businesses) {
-      // Fallback for object structure if it changes
-      businesses = (data.entities as any).businesses;
+    // Check if we have entities
+    if (!data.entities || data.entities.length === 0) {
+      console.warn('No entities found in API response');
+      return [];
     }
 
-    if (businesses.length === 0) {
-      console.warn('No businesses found in API response entities');
+    // Find the businesses entity
+    let businessesEntity = data.entities.find((entity: any) => entity.businesses);
+
+    // Fallback: check if entities themselves are businesses
+    if (!businessesEntity && data.entities[0]?.name) {
+      console.log('Using entities directly as businesses');
+      businessesEntity = { businesses: data.entities };
+    }
+
+    if (!businessesEntity || !businessesEntity.businesses) {
+      console.warn('No businesses found in entities');
       return [];
+    }
+
+    const businesses = businessesEntity.businesses;
+    console.log('Found', businesses.length, 'businesses');
+    console.log('First business structure:', JSON.stringify(businesses[0], null, 2));
+
+    // Parse response.text to extract review highlights for each business
+    const responseText = data.response?.text || '';
+    const tags = data.response?.tags || [];
+
+    // Create a map of business_id to review highlights
+    const businessReviews: Record<string, string[]> = {};
+
+    if (responseText && tags.length > 0) {
+      let currentBusinessId: string | null = null;
+
+      // Sort tags by start position
+      const sortedTags = [...tags].sort((a, b) => a.start - b.start);
+
+      for (const tag of sortedTags) {
+        if (tag.tag_type === 'business' && tag.meta?.business_id) {
+          currentBusinessId = tag.meta.business_id;
+          if (!businessReviews[currentBusinessId]) {
+            businessReviews[currentBusinessId] = [];
+          }
+        } else if (tag.tag_type === 'highlight' && currentBusinessId !== null) {
+          const highlightText = responseText.substring(tag.start, tag.end);
+          if (highlightText && businessReviews[currentBusinessId]) {
+            businessReviews[currentBusinessId].push(highlightText);
+          }
+        }
+      }
+
+      console.log('Extracted business reviews:', businessReviews);
     }
 
     // Map Yelp businesses to our Restaurant interface
@@ -126,28 +171,80 @@ export async function fetchRestaurants(preferences: UserPreferences): Promise<Re
         cost = b.price;
       }
 
-      // Map reviews
+      // Extract reviews from response.text highlights and contextual_info
       const reviews = [];
-      if (b.review_snippet) {
+
+      // First, add highlights from the parsed response.text
+      const highlights = businessReviews[b.id] || [];
+      highlights.forEach((highlight, idx) => {
         reviews.push({
-          user: 'Yelp Reviewer',
+          user: 'Yelp User',
           rating: b.rating || 5,
-          text: b.review_snippet.text || b.review_snippet
+          text: highlight
         });
+      });
+
+      // Then, add the single review_snippet from contextual_info if available
+      if (b.contextual_info?.review_snippet) {
+        // Remove [[HIGHLIGHT]] and [[ENDHIGHLIGHT]] markers
+        const cleanText = b.contextual_info.review_snippet
+          .replace(/\[\[HIGHLIGHT\]\]/g, '')
+          .replace(/\[\[ENDHIGHLIGHT\]\]/g, '');
+
+        // Only add if it's not already in the highlights
+        const isDuplicate = reviews.some(r => r.text === cleanText);
+        if (!isDuplicate && cleanText.trim()) {
+          reviews.push({
+            user: 'Yelp User',
+            rating: b.rating || 5,
+            text: cleanText
+          });
+        }
       }
 
+      console.log('Extracted reviews for', b.name, ':', reviews.length, 'review(s)');
+
+      // Extract image URLs from contextual_info.photos or fallback to image_url
+      let imageUrl = b.image_url;
+      const additionalImages: string[] = [];
+
+      if (b.contextual_info?.photos && Array.isArray(b.contextual_info.photos) && b.contextual_info.photos.length > 0) {
+        // Use the first photo as the main image if available
+        if (b.contextual_info.photos[0].original_url) {
+          imageUrl = b.contextual_info.photos[0].original_url;
+        }
+
+        // Add all photos to additionalImages
+        b.contextual_info.photos.forEach((photo: any) => {
+          if (photo.original_url) {
+            additionalImages.push(photo.original_url);
+          }
+        });
+      } else if (!imageUrl) {
+        // Fallback to Unsplash if no image URL is available
+        imageUrl = `https://source.unsplash.com/800x600/?${encodeURIComponent(b.categories?.[0]?.title || 'restaurant')}`;
+      }
+
+      console.log(`Restaurant: ${b.name}, Image URL: ${imageUrl}, Additional Images: ${additionalImages.length}`);
+
       return {
-        id: b.id || `yelp-${index}`,
+        id: b.id,
         name: b.name,
         cuisine: b.categories?.[0]?.title || 'Restaurant',
         location: locationDisplay,
         cost: cost,
-        rating: b.rating || 0,
-        reviews: b.review_count || 0,
-        image: b.image_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80', // Fallback image
-        tags: b.categories?.map((c: any) => c.title).slice(0, 3) || [],
-        topDishes: [], // API might not return this directly in the business object, leaving empty for now
-        userReviews: reviews
+        rating: b.rating,
+        reviews: b.review_count,
+        image: imageUrl || '',
+        additionalImages: additionalImages,
+        tags: ['Great for Groups', 'Casual', 'Good for Kids'], // Placeholder tags
+        topDishes: ['Signature Dish', 'Popular Item', 'Chef Special'], // Placeholder dishes
+        userReviews: reviews,
+        phone: b.phone,
+        display_phone: b.phone, // Use raw phone if display_phone not available
+        is_closed: false, // Default to open if not specified
+        shortSummary: b.summaries?.short,
+        longSummary: b.summaries?.long
       };
     });
 

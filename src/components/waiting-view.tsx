@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Users, ArrowLeft, MapPin, UtensilsCrossed, DollarSign, Play, User } from 'lucide-react';
+import { Users, ArrowLeft, MapPin, UtensilsCrossed, DollarSign, Play, User, Calendar, Clock } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { toast } from 'sonner@2.0.3';
@@ -11,6 +11,8 @@ interface WaitingViewProps {
     location: string[];
     cost: number[];
   };
+  date?: string;
+  time?: string;
   totalParticipants: number;
   onStart: () => void;
   onBack: () => void;
@@ -26,7 +28,7 @@ interface Participant {
 
 const MOCK_NAMES = ['Alex', 'Sam', 'Jordan', 'Taylor', 'Casey', 'Riley', 'Morgan', 'Quinn'];
 
-export function WaitingView({ filters, totalParticipants, onStart, onBack }: WaitingViewProps) {
+export function WaitingView({ filters, date, time, totalParticipants, onStart, onBack }: WaitingViewProps) {
   const [participants, setParticipants] = useState<Participant[]>([
     { id: 'self', initials: 'YO', name: 'You', joined: true, isSelf: true }
   ]);
@@ -45,7 +47,7 @@ export function WaitingView({ filters, totalParticipants, onStart, onBack }: Wai
   useEffect(() => {
     let joinedCount = 1;
     const max = totalParticipants;
-    
+
     const interval = setInterval(() => {
       if (joinedCount >= max) {
         clearInterval(interval);
@@ -60,7 +62,7 @@ export function WaitingView({ filters, totalParticipants, onStart, onBack }: Wai
         name: newName,
         joined: true
       };
-      
+
       setDisplayList(prev => {
         const newList = [...prev];
         newList[joinedCount] = newParticipant;
@@ -69,7 +71,7 @@ export function WaitingView({ filters, totalParticipants, onStart, onBack }: Wai
 
       joinedCount++;
       toast.success(`${newName} joined the session!`);
-      
+
     }, 2500); // New user every 2.5 seconds
 
     return () => clearInterval(interval);
@@ -97,7 +99,7 @@ export function WaitingView({ filters, totalParticipants, onStart, onBack }: Wai
         {/* Session Details Card */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
           <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Session Details</h3>
-          
+
           <div className="space-y-4">
             <div className="flex items-start gap-3">
               <UtensilsCrossed className="size-5 text-red-500 mt-0.5" />
@@ -152,6 +154,28 @@ export function WaitingView({ filters, totalParticipants, onStart, onBack }: Wai
                 </div>
               </div>
             </div>
+
+            {(date || time) && (
+              <div className="flex items-start gap-3">
+                <Calendar className="size-5 text-red-500 mt-0.5" />
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-gray-900 mb-1">When</div>
+                  <div className="flex flex-wrap gap-2">
+                    {date && (
+                      <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-100">
+                        {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </Badge>
+                    )}
+                    {time && (
+                      <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-100">
+                        <Clock className="size-3 mr-1" />
+                        {time}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -167,8 +191,8 @@ export function WaitingView({ filters, totalParticipants, onStart, onBack }: Wai
                 className="flex flex-col items-center gap-2"
               >
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold border-4 shadow-sm transition-all
-                  ${participant.joined 
-                    ? 'bg-white border-green-500 text-gray-900' 
+                  ${participant.joined
+                    ? 'bg-white border-green-500 text-gray-900'
                     : 'bg-gray-100 border-gray-200 text-gray-300 border-dashed'
                   }
                   ${participant.isSelf ? 'border-red-500' : ''}
@@ -189,29 +213,29 @@ export function WaitingView({ filters, totalParticipants, onStart, onBack }: Wai
 
         {/* Bottom Action */}
         <div className="mt-8">
-           {/* Progress Bar */}
-           <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden mb-6">
-             <motion.div 
-               className="h-full bg-green-500"
-               initial={{ width: 0 }}
-               animate={{ width: `${progress}%` }}
-               transition={{ duration: 0.5 }}
-             />
-           </div>
+          {/* Progress Bar */}
+          <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden mb-6">
+            <motion.div
+              className="h-full bg-green-500"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
 
-           <Button 
-             className="w-full h-14 text-lg font-semibold bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 rounded-xl gap-2"
-             onClick={onStart}
-             disabled={joinedCount < 2 && totalParticipants > 1}
-           >
-             <Play className="size-5 fill-current" />
-             {joinedCount === totalParticipants ? 'Start Swiping!' : 'Start Now Anyway'}
-           </Button>
-           {joinedCount < totalParticipants && (
-             <p className="text-center text-xs text-gray-400 mt-3">
-               Waiting for everyone gives the best results
-             </p>
-           )}
+          <Button
+            className="w-full h-14 text-lg font-semibold bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 rounded-xl gap-2"
+            onClick={onStart}
+            disabled={joinedCount < 2 && totalParticipants > 1}
+          >
+            <Play className="size-5 fill-current" />
+            {joinedCount === totalParticipants ? 'Start Swiping!' : 'Start Now Anyway'}
+          </Button>
+          {joinedCount < totalParticipants && (
+            <p className="text-center text-xs text-gray-400 mt-3">
+              Waiting for everyone gives the best results
+            </p>
+          )}
         </div>
       </main>
     </div>
