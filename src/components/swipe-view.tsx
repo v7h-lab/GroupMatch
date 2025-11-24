@@ -227,7 +227,12 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
       </div>
 
       <Sheet open={showDetails} onOpenChange={setShowDetails}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl p-0 overflow-hidden [&>button]:hidden">
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl p-0 overflow-hidden">
+          <style>{`
+            [data-radix-dialog-content] > button[type="button"]:first-of-type {
+              display: none !important;
+            }
+          `}</style>
           <div className="h-full overflow-y-auto">
             <div className="relative h-64">
               <ImageWithFallback
@@ -236,6 +241,17 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
                 className="w-full h-full object-cover object-center"
               />
             </div>
+
+            {/* Custom close button positioned to overlap default button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute size-10 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white hover:scale-110 transition-all z-50"
+              style={{ top: '13px', right: '13px' }}
+              onClick={() => setShowDetails(false)}
+            >
+              <X className="size-5 text-gray-900" />
+            </Button>
 
             <div className="p-6 space-y-6">
               <div>
