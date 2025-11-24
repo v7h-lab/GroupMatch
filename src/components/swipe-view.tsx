@@ -148,6 +148,22 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
                 className="w-full h-full object-cover object-center"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+              {/* Info button in top right */}
+              <div className="absolute top-4 right-4 z-10">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 border-none"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDetails(true);
+                  }}
+                >
+                  <Info className="size-5 text-white" />
+                </Button>
+              </div>
+
               <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
                 <h2 className="text-3xl font-bold mb-2">{currentRestaurant.name}</h2>
                 <div className="flex items-center gap-2 text-sm font-medium">
@@ -158,29 +174,21 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
                     <Star className="size-3 fill-yellow-400 text-yellow-400" />
                     {currentRestaurant.rating}
                   </span>
+                  <span className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded-full backdrop-blur-sm">
+                    {Array(currentRestaurant.cost).fill('$').join('')}
+                  </span>
+                  <span className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded-full backdrop-blur-sm">
+                    <MapPin className="size-3" />
+                    {currentRestaurant.location.split(',').pop()?.trim() || currentRestaurant.location}
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="p-6 space-y-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center gap-2 text-gray-600 mb-1">
-                    <MapPin className="size-4" />
-                    {currentRestaurant.location}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {Array(currentRestaurant.cost).fill('$').join('')}
-                  </div>
-                </div>
-                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setShowDetails(true)}>
-                  <Info className="size-6 text-gray-400" />
-                </Button>
-              </div>
-
               {/* Short Summary for Card View */}
               {currentRestaurant.shortSummary && (
-                <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
+                <p className="text-gray-600 text-sm leading-relaxed">
                   {currentRestaurant.shortSummary}
                 </p>
               )}
@@ -227,15 +235,6 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
                 alt={currentRestaurant.name}
                 className="w-full h-full object-cover object-center"
               />
-              {/* Custom close button with high visibility */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-4 right-4 size-10 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white hover:scale-110 transition-all z-10"
-                onClick={() => setShowDetails(false)}
-              >
-                <X className="size-5 text-gray-900" />
-              </Button>
             </div>
 
             <div className="p-6 space-y-6">
@@ -244,7 +243,7 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
                 <div className="flex items-center gap-4 text-gray-600">
                   <span className="flex items-center gap-1">
                     <Star className="size-4 fill-yellow-400 text-yellow-400" />
-                    {currentRestaurant.rating} ({currentRestaurant.reviews} reviews)
+                    {currentRestaurant.rating} ({currentRestaurant.reviews})
                   </span>
                   <span>•</span>
                   <span>{currentRestaurant.cuisine}</span>
@@ -257,6 +256,10 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
                     {currentRestaurant.phone}
                   </div>
                 )}
+                <div className="mt-2 text-gray-600 flex items-center gap-2">
+                  <MapPin className="size-4" />
+                  {currentRestaurant.location}
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -299,15 +302,8 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
                   <div className="space-y-3">
                     {currentRestaurant.userReviews.map((review, idx) => (
                       <div key={idx} className="bg-gradient-to-br from-gray-50 to-white border border-gray-100 p-4 rounded-xl shadow-sm">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <span className="font-semibold text-gray-900">
-                              {review.user}
-                            </span>
-                          </div>
-                        </div>
                         <p className="text-gray-700 text-sm leading-relaxed">
-                          {review.text}
+                          "{review.text}"
                         </p>
                       </div>
                     ))}
@@ -315,12 +311,30 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
                 </div>
               )}
 
-              <div className="pt-4">
-                <Button className="w-full py-6 text-lg rounded-xl bg-red-500 hover:bg-red-600" onClick={() => {
-                  onMatch(currentRestaurant);
-                  setShowDetails(false);
-                }}>
-                  Pick this Place!
+              <div className="pt-4 pb-6 flex justify-center gap-6">
+                <Button
+                  size="lg"
+                  className="size-16 rounded-full bg-white text-red-500 shadow-lg hover:bg-red-50 hover:scale-110 transition-all"
+                  onClick={() => {
+                    handleSwipe('left');
+                    setShowDetails(false);
+                  }}
+                >
+                  <X className="size-8" />
+                </Button>
+                <Button
+                  size="lg"
+                  variant="ghost"
+                  style={{ backgroundColor: '#ef4444' }}
+                  className="size-16 rounded-full text-white shadow-lg shadow-red-200 hover:scale-110 transition-all hover:text-white"
+                  onClick={() => {
+                    handleSwipe('right');
+                    setShowDetails(false);
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ef4444'}
+                >
+                  <Heart className="size-8 fill-white" />
                 </Button>
               </div>
             </div>

@@ -336,7 +336,9 @@ export default function App() {
         <SwipeView
           restaurants={restaurantsToSwipe}
           onBack={() => setView('filters')}
-          onMatch={(restaurant) => toast.success(`Matched with ${restaurant.name}!`)}
+          onMatch={(restaurant) => {
+            // toast.success(`Matched with ${restaurant.name}!`); // Disabled for now, can be re-enabled later
+          }}
         />
       </>
     );
@@ -347,8 +349,14 @@ export default function App() {
       <Toaster position="top-center" />
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="mx-auto px-4 py-4 max-w-md">
+      <header
+        className={`sticky top-0 z-50 ${view === 'share' ? '' : 'bg-white border-b border-gray-200 shadow-sm'}`}
+        style={view === 'share' ? { backgroundColor: '#ffffff00' } : undefined}
+      >
+        <div
+          className="mx-auto px-4 py-4 max-w-md"
+          style={view === 'share' ? { backgroundColor: '#ffffff00' } : undefined}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="bg-red-600 p-2 rounded-xl">
@@ -501,8 +509,8 @@ export default function App() {
           onClick={handleNextStep}
           disabled={filterStep === 1 && (!selectedDate || !selectedTime || selectedLocations.length === 0)}
           className={`pointer-events-auto px-8 py-4 rounded-full shadow-xl flex items-center gap-3 font-semibold text-lg transition-all ${filterStep === 1 && (!selectedDate || !selectedTime || selectedLocations.length === 0)
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-gray-200'
-              : 'bg-red-600 text-white shadow-red-200 hover:bg-red-700'
+            ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-gray-200'
+            : 'bg-red-600 text-white shadow-red-200 hover:bg-red-700'
             }`}
         >
           <span>{filterStep === 1 ? 'Next' : 'Next'}</span>
