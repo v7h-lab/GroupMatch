@@ -147,7 +147,7 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
                 alt={currentRestaurant.name}
                 className="w-full h-full object-cover object-center"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
               {/* Info button in top right */}
               <div className="absolute top-4 right-4 z-10">
