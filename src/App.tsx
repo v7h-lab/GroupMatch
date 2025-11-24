@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { UtensilsCrossed, DollarSign, ArrowRight, ArrowLeft } from 'lucide-react';
+import { UtensilsCrossed, DollarSign, ArrowRight, ArrowLeft, Star } from 'lucide-react';
 import { FilterSection } from './components/filter-section';
 import { LocationSearch } from './components/location-search';
 import { DateTimePicker } from './components/date-time-picker';
@@ -36,6 +36,13 @@ const costOptions = [
   { label: '$$', value: 2, desc: 'Moderate' },
   { label: '$$$', value: 3, desc: 'Pricey' },
   { label: '$$$$', value: 4, desc: 'Luxury' },
+];
+
+const ratingOptions = [
+  { label: 'Any', value: 0 },
+  { label: '3.5+', value: 3.5 },
+  { label: '4.0+', value: 4.0 },
+  { label: '4.5+', value: 4.5 },
 ];
 
 const mockRestaurants: Restaurant[] = [
@@ -179,6 +186,7 @@ export default function App() {
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedCosts, setSelectedCosts] = useState<number[]>([]);
+  const [selectedRating, setSelectedRating] = useState<number>(0);
   const [sessionParticipants, setSessionParticipants] = useState(2);
 
   const toggleFilter = <T extends string | number>(
@@ -238,6 +246,7 @@ export default function App() {
         cuisines: selectedCuisines,
         locations: selectedLocations,
         costs: selectedCosts,
+        minRating: selectedRating > 0 ? selectedRating : undefined,
         date: selectedDate,
         time: selectedTime
       });
@@ -255,7 +264,7 @@ export default function App() {
   };
 
   const activeFiltersCount =
-    selectedCuisines.length + selectedLocations.length + selectedCosts.length;
+    selectedCuisines.length + selectedLocations.length + selectedCosts.length + (selectedRating > 0 ? 1 : 0);
 
   // Use fetched restaurants if available, otherwise filter mock data as fallback
   const restaurantsToUse = fetchedRestaurants.length > 0 ? fetchedRestaurants : mockRestaurants;
@@ -266,7 +275,8 @@ export default function App() {
       const matchesCuisine = selectedCuisines.length === 0 || selectedCuisines.some(c => c.includes(restaurant.cuisine));
       const matchesLocation = selectedLocations.length === 0 || selectedLocations.some(l => restaurant.location.includes(l) || l.includes(restaurant.location));
       const matchesCost = selectedCosts.length === 0 || selectedCosts.includes(restaurant.cost);
-      return matchesCuisine && matchesLocation && matchesCost;
+      const matchesRating = selectedRating === 0 || restaurant.rating >= selectedRating;
+      return matchesCuisine && matchesLocation && matchesCost && matchesRating;
     })
     : restaurantsToUse;
 
@@ -343,6 +353,7 @@ export default function App() {
                   setSelectedCuisines([]);
                   setSelectedLocations([]);
                   setSelectedCosts([]);
+                  setSelectedRating(0);
                   setSelectedDate('');
                   setSelectedTime('');
                 }}
@@ -390,7 +401,35 @@ export default function App() {
                 options={cuisineOptions}
                 selected={selectedCuisines}
                 onToggle={(value) => toggleFilter(value, selectedCuisines, setSelectedCuisines)}
+                limit={12}
               />
+
+              <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="bg-red-600 p-1.5 rounded-lg">
+                    <Star className="size-4 text-white" />
+                  </div>
+                  <span className="font-semibold text-gray-900">Minimum Rating</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {ratingOptions.map((option) => (
+                    <motion.button
+                      key={option.value}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setSelectedRating(option.value)}
+                      className={`px-2 py-3 rounded-xl transition-all ${selectedRating === option.value
+                        ? 'bg-red-600 text-white shadow-lg shadow-red-200'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        }`}
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="font-medium">{option.label}</span>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
 
               <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                 <div className="flex items-center gap-2 mb-3">

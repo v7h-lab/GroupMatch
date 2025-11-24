@@ -75,7 +75,7 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange }: DateT
                                 <Clock className="size-4 text-gray-400 shrink-0" />
                             </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1 rounded-md bg-white" align="start" style={{ scrollbarWidth: 'thin', maxHeight: '240px', overflowY: 'auto' }}>
+                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1 rounded-md bg-white" align="start" style={{ scrollbarWidth: 'thin', maxHeight: '240px', overflowY: 'auto', width: 'var(--radix-popover-trigger-width)' }}>
                             {timeOptions.map((option) => (
                                 <button
                                     key={option}
