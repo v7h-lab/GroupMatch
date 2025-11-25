@@ -339,6 +339,7 @@ export default function App() {
           onMatch={(restaurant) => {
             // toast.success(`Matched with ${restaurant.name}!`); // Disabled for now, can be re-enabled later
           }}
+          participants={sessionParticipants}
         />
       </>
     );

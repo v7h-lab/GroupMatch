@@ -58,13 +58,15 @@ interface SwipeViewProps {
   restaurants: Restaurant[];
   onMatch: (restaurant: Restaurant) => void;
   onBack: () => void;
+  participants: number;
 }
 
-export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
+export function SwipeView({ restaurants, onMatch, onBack, participants }: SwipeViewProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [matchedRestaurant, setMatchedRestaurant] = useState<Restaurant | null>(null);
   const [showMatch, setShowMatch] = useState(false);
 
   // Reset index when restaurants change (to fix stale data/index issues)
@@ -82,6 +84,7 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
       const newLikeCount = likeCount + 1;
       setLikeCount(newLikeCount);
       if (newLikeCount === 2) {
+        setMatchedRestaurant(currentRestaurant);
         setTimeout(() => {
           setShowMatch(true);
         }, 200); // Show match screen after card exit animation
@@ -139,24 +142,87 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
         exit={{ opacity: 0, scale: 0.9 }}
         className="min-h-screen bg-red-600 flex flex-col items-center justify-center p-6 text-center z-50 fixed inset-0"
       >
-        <div className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full">
-          <div
-            className="bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 shrink-0 animate-bounce"
-            style={{ width: '6rem', height: '6rem' }}
-          >
-            <Heart className="size-12 text-red-600 fill-red-600" />
+        <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden flex flex-col">
+          <div className="pt-24 pb-4 px-8">
+            <div
+              className="rounded-full flex items-center justify-center mx-auto mb-4 shrink-0 animate-bounce"
+              style={{ width: '5rem', height: '5rem', backgroundColor: '#fee2e2' }}
+            >
+              <Heart className="size-10 text-red-600 fill-red-600" />
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-1">It's a Match!</h2>
+            <p className="text-gray-500 text-sm">Everyone wants to go here</p>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">It's a Match!</h2>
-          <p className="text-gray-500 mb-8 text-lg">
-            Everyone in your group liked <span className="font-semibold text-gray-900">{restaurants[currentIndex - 1]?.name}</span>!
-          </p>
-          <Button
-            onClick={handleContinueSwiping}
-            variant="outline"
-            className="w-full h-12 rounded-xl border-2"
-          >
-            Continue Swiping
-          </Button>
+
+          {/* Hero Image with Details Overlay */}
+          <div className="relative h-64 w-full shrink-0 group">
+            <ImageWithFallback
+              src={matchedRestaurant?.image || ''}
+              alt={matchedRestaurant?.name || ''}
+              className="w-full h-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+            <div className="absolute bottom-0 left-0 right-0 p-6 text-white text-left">
+              <h3 className="text-2xl font-bold mb-2">{matchedRestaurant?.name}</h3>
+              <div className="flex items-center gap-2 text-sm font-medium flex-wrap">
+                <span className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded-full backdrop-blur-sm">
+                  <Star className="size-3 fill-yellow-400 text-yellow-400" />
+                  {matchedRestaurant?.rating}
+                </span>
+                <Badge variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm">
+                  {matchedRestaurant?.cuisine}
+                </Badge>
+                <span className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded-full backdrop-blur-sm">
+                  {Array(matchedRestaurant?.cost || 1).fill('$').join('')}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 flex flex-col gap-6">
+            {/* Going With Section */}
+            <div className="flex flex-col gap-3 items-start">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                <Check className="size-3" /> Who is going
+              </span>
+              <div className="flex -space-x-2 overflow-hidden">
+                {Array.from({ length: Math.min(participants, 4) }).map((_, i) => (
+                  <div key={i} className={`inline-flex h-10 w-10 rounded-full ring-2 ring-white items-center justify-center text-xs font-bold text-gray-600 ${['bg-gray-100', 'bg-gray-200', 'bg-gray-300', 'bg-gray-400'][i % 4]
+                    }`}>
+                    {['AL', 'SA', 'YO', 'MI'][i % 4]}
+                  </div>
+                ))}
+                {participants > 4 && (
+                  <div className="inline-flex h-10 w-10 rounded-full ring-2 ring-white bg-gray-50 items-center justify-center text-xs font-bold text-gray-400">
+                    +{participants - 4}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col gap-6 w-full">
+              <Button
+                className="w-full bg-red-600 hover:bg-red-700 text-white h-14 text-lg rounded-2xl shadow-lg shadow-red-200"
+                onClick={() => {
+                  // Handle reservation
+                }}
+              >
+                Reserve Table
+              </Button>
+
+              <button
+                onClick={() => {
+                  setShowMatch(false);
+                  setMatchedRestaurant(null);
+                }}
+                className="text-gray-500 font-medium hover:text-gray-800 transition-colors text-sm"
+              >
+                Keep swiping
+              </button>
+            </div>
+          </div>
         </div>
       </motion.div>
     );
