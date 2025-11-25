@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'motion/react';
-import { X, Heart, Star, MapPin, DollarSign, Info, ArrowLeft, Phone } from 'lucide-react';
+import { X, Heart, Star, MapPin, DollarSign, Info, ArrowLeft, Phone, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from './ui/sheet';
@@ -64,6 +64,8 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [showMatch, setShowMatch] = useState(false);
 
   // Reset index when restaurants change (to fix stale data/index issues)
   useEffect(() => {
@@ -75,6 +77,17 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
   const handleSwipe = (dir: 'left' | 'right') => {
     setDirection(dir);
     setShowDetails(false); // Close details sheet when swiping to prevent stale data
+
+    if (dir === 'right') {
+      const newLikeCount = likeCount + 1;
+      setLikeCount(newLikeCount);
+      if (newLikeCount === 2) {
+        setTimeout(() => {
+          setShowMatch(true);
+        }, 200); // Show match screen after card exit animation
+      }
+    }
+
     setTimeout(() => {
       if (dir === 'right') {
         onMatch(currentRestaurant);
@@ -82,6 +95,10 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
       setCurrentIndex((prev) => prev + 1);
       setDirection(null);
     }, 200);
+  };
+
+  const handleContinueSwiping = () => {
+    setShowMatch(false);
   };
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -96,8 +113,11 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
         <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full">
-          <div className="bg-red-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Heart className="size-10 text-red-600" />
+          <div
+            className="rounded-full flex items-center justify-center mx-auto mb-6 shrink-0"
+            style={{ width: '6rem', height: '6rem', backgroundColor: '#dcfce7' }}
+          >
+            <Check className="size-12 text-green-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">All Caught Up!</h2>
           <p className="text-gray-500 mb-8">
@@ -108,6 +128,37 @@ export function SwipeView({ restaurants, onMatch, onBack }: SwipeViewProps) {
           </Button>
         </div>
       </div>
+    );
+  }
+
+  if (showMatch) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="min-h-screen bg-red-600 flex flex-col items-center justify-center p-6 text-center z-50 fixed inset-0"
+      >
+        <div className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full">
+          <div
+            className="bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 shrink-0 animate-bounce"
+            style={{ width: '6rem', height: '6rem' }}
+          >
+            <Heart className="size-12 text-red-600 fill-red-600" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">It's a Match!</h2>
+          <p className="text-gray-500 mb-8 text-lg">
+            Everyone in your group liked <span className="font-semibold text-gray-900">{restaurants[currentIndex - 1]?.name}</span>!
+          </p>
+          <Button
+            onClick={handleContinueSwiping}
+            variant="outline"
+            className="w-full h-12 rounded-xl border-2"
+          >
+            Continue Swiping
+          </Button>
+        </div>
+      </motion.div>
     );
   }
 
