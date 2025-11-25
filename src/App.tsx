@@ -226,7 +226,7 @@ export default function App() {
     } else {
       // Generate a mock unique URL
       const uniqueId = Math.random().toString(36).substring(2, 8);
-      const url = `https://yelpclone.app/group/${uniqueId}`;
+      const url = `https://yelpmatch.app/group/${uniqueId}`;
       setShareUrl(url);
       setView('share');
     }
@@ -364,7 +364,7 @@ export default function App() {
                 <UtensilsCrossed className="size-6 text-white" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-                Yelp<span className="text-red-600">Clone</span>
+                Yelp<span className="text-red-600">Match</span>
               </h1>
             </div>
 
