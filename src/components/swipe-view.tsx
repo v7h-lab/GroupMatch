@@ -143,7 +143,8 @@ export function SwipeView({ restaurants, onMatch, onBack, participants }: SwipeV
         className="min-h-screen bg-red-600 flex flex-col items-center justify-center p-6 text-center z-50 fixed inset-0"
       >
         <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden flex flex-col">
-          <div className="pt-24 pb-4 px-8">
+          <div className="pt-8 pb-4 px-8 flex flex-col items-center">
+            <div className="h-9 w-full" />
             <div
               className="rounded-full flex items-center justify-center mx-auto mb-4 shrink-0 animate-bounce"
               style={{ width: '5rem', height: '5rem', backgroundColor: '#fee2e2' }}
@@ -151,7 +152,6 @@ export function SwipeView({ restaurants, onMatch, onBack, participants }: SwipeV
               <Heart className="size-10 text-red-600 fill-red-600" />
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-1">It's a Match!</h2>
-            <p className="text-gray-500 text-sm">Everyone wants to go here</p>
           </div>
 
           {/* Hero Image with Details Overlay */}
@@ -184,7 +184,7 @@ export function SwipeView({ restaurants, onMatch, onBack, participants }: SwipeV
             {/* Going With Section */}
             <div className="flex flex-col gap-3 items-start">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                <Check className="size-3" /> Who is going
+                <Check className="size-3" /> Everyone wants to go here
               </span>
               <div className="flex -space-x-2 overflow-hidden">
                 {Array.from({ length: Math.min(participants, 4) }).map((_, i) => (

@@ -368,17 +368,20 @@ export default function App() {
               </h1>
             </div>
 
-            {activeFiltersCount > 0 && (
+            {(filterStep === 1 ? (selectedDate || selectedTime || selectedLocations.length > 0) : (selectedCuisines.length > 0 || selectedCosts.length > 0 || selectedRating > 0)) && (
               <motion.button
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 onClick={() => {
-                  setSelectedCuisines([]);
-                  setSelectedLocations([]);
-                  setSelectedCosts([]);
-                  setSelectedRating(0);
-                  setSelectedDate('');
-                  setSelectedTime('');
+                  if (filterStep === 1) {
+                    setSelectedDate('');
+                    setSelectedTime('');
+                    setSelectedLocations([]);
+                  } else {
+                    setSelectedCuisines([]);
+                    setSelectedCosts([]);
+                    setSelectedRating(0);
+                  }
                 }}
                 className="text-sm font-medium text-red-600 hover:text-red-700 transition-colors"
               >
