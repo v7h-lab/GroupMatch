@@ -1,6 +1,8 @@
 # YelpMatch
 
-A collaborative dining decision app that makes choosing a restaurant fun and easy. Inspired by Tinder's swipe interface, YelpMatch allows groups to vote on restaurants and find the perfect match.
+A collaborative dining decision app that makes choosing a restaurant fun and easy. Inspired by dating apps swipe interface, YelpMatch allows groups to vote on restaurants and find the perfect match.
+
+🔗 **[Live Demo](https://fabulous-smakager-c0d743.netlify.app/)**
 
 ## ✨ Feature Highlights
 
