@@ -37,11 +37,21 @@ A collaborative dining decision app that makes choosing a restaurant fun and eas
    ```
 
 3. **Configure Environment Variables**
+   
+   **For Local Development:**
    Create a `.env` file in the root directory and add your Yelp API key:
    ```env
    VITE_YELP_API_KEY=your_yelp_api_key_here
    ```
-   > **Note**: You need a Yelp Fusion API key to fetch real restaurant data. Without it, the app may not function correctly or will use mock data if implemented.
+   
+   **For Production (Netlify):**
+   1. Go to your Netlify site dashboard
+   2. Navigate to **Site configuration** → **Environment variables**
+   3. Add a variable with key `YELP_API_KEY` (without `VITE_` prefix) and your API key as the value
+   4. Check "Contains secret values"
+   5. Save and redeploy
+   
+   > **Security Note**: The app uses Netlify serverless functions in production to keep your API key secure. In development, it calls the Yelp API directly for easier debugging.
 
 4. **Start the development server**
    ```bash

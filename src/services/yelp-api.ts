@@ -1,7 +1,11 @@
 import { Restaurant } from '../components/swipe-view';
 
+// Use Netlify function for production, direct API for local development
+const isDevelopment = import.meta.env.DEV;
 const YELP_API_KEY = import.meta.env.VITE_YELP_API_KEY;
-const YELP_API_URL = 'https://api.yelp.com/ai/chat/v2';
+const YELP_API_URL = isDevelopment
+  ? 'https://api.yelp.com/ai/chat/v2'
+  : '/.netlify/functions/yelp-proxy';
 
 interface UserPreferences {
   cuisines: string[];
@@ -43,7 +47,8 @@ interface YelpAIResponse {
 }
 
 export async function fetchRestaurants(preferences: UserPreferences): Promise<Restaurant[]> {
-  if (!YELP_API_KEY) {
+  // Only check for API key in development mode
+  if (isDevelopment && !YELP_API_KEY) {
     console.error('Yelp API Key is missing. Please add VITE_YELP_API_KEY to your .env file.');
     throw new Error('Yelp API Key is missing');
   }
@@ -70,23 +75,36 @@ export async function fetchRestaurants(preferences: UserPreferences): Promise<Re
 
   const query = `Recommend popular ${cuisineStr} restaurants ${locationStr} ${costStr} ${ratingStr} with reviews.`;
 
-  console.log('Yelp API Request:', { url: YELP_API_URL, query, apiKeyPresent: !!YELP_API_KEY });
+  console.log('Yelp API Request:', {
+    url: YELP_API_URL,
+    query,
+    isDevelopment,
+    apiKeyPresent: isDevelopment ? !!YELP_API_KEY : 'using serverless function'
+  });
 
   try {
+    const requestBody = {
+      query: query,
+      user_context: {
+        locale: "en_US",
+        location: preferences.locations[0] || "San Francisco, CA"
+      }
+    };
+
+    // Build headers - only include Authorization in development
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      'accept': 'application/json'
+    };
+
+    if (isDevelopment && YELP_API_KEY) {
+      headers['Authorization'] = `Bearer ${YELP_API_KEY}`;
+    }
+
     const response = await fetch(YELP_API_URL, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${YELP_API_KEY}`,
-        'Content-Type': 'application/json',
-        'accept': 'application/json'
-      },
-      body: JSON.stringify({
-        query: query,
-        user_context: {
-          locale: "en_US",
-          location: preferences.locations[0] || "San Francisco, CA"
-        }
-      })
+      headers,
+      body: JSON.stringify(requestBody)
     });
 
     console.log('Yelp API Response Status:', response.status);
