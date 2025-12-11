@@ -17,12 +17,32 @@ export function ShareView({ url, onBack, onStartSession }: ShareViewProps) {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(url);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        // Fallback for non-secure contexts (HTTP)
+        const textArea = document.createElement("textarea");
+        textArea.value = url;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          console.error('Fallback copy failed', err);
+          throw new Error('Fallback copy failed');
+        }
+        document.body.removeChild(textArea);
+      }
       setCopied(true);
       toast.success('Link copied to clipboard!');
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      toast.error('Failed to copy link');
+      console.error('Copy failed', err);
+      toast.error('Failed to copy link - please copy manually');
     }
   };
 

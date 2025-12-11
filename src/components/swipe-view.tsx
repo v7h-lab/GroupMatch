@@ -26,6 +26,8 @@ export interface Restaurant {
   phone?: string;
   display_phone?: string;
   is_closed?: boolean;
+  shortSummary?: string;
+  longSummary?: string;
 }
 
 function ImageWithFallback({ src, alt, className }: { src: string, alt: string, className?: string }) {
@@ -61,37 +63,39 @@ interface SwipeViewProps {
   onBack: () => void;
   participants: number;
   users?: Participant[];
+  extraContent?: React.ReactNode;
+  onReserve?: (restaurant: Restaurant) => void;
+  isHost?: boolean;
+  onLoadMore?: () => void;
 }
 
-export function SwipeView({ restaurants, onMatch, onBack, participants, users }: SwipeViewProps) {
+export function SwipeView({ restaurants, onMatch, onBack, participants, users, extraContent, onReserve, isHost, onLoadMore }: SwipeViewProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
-  const [matchedRestaurant, setMatchedRestaurant] = useState<Restaurant | null>(null);
-  const [showMatch, setShowMatch] = useState(false);
 
   // Reset index when restaurants change (to fix stale data/index issues)
+  // Reset index ONLY when the restaurant list ID changes (new search), not on every update
+  // Reset index when the restaurant list changes (e.g. Load More)
+  // Removed problematic useEffect that caused infinite cycling
+  // We now rely solely on the firstId check below to reset index on new lists
+
+  // Also watch for explicit list replacements (checking first ID)
+  const firstId = restaurants[0]?.id;
   useEffect(() => {
-    setCurrentIndex(0);
-  }, [restaurants]);
+    if (firstId) {
+      // If we are already at 0, no need to reset. 
+      // If we are deep in the list, and the list changes (new first ID), reset.
+      // Note: This might reset if we just refresh, but local state resets anyway.
+      setCurrentIndex(0);
+    }
+  }, [firstId]);
 
   const currentRestaurant = restaurants[currentIndex];
 
   const handleSwipe = (dir: 'left' | 'right') => {
     setDirection(dir);
     setShowDetails(false); // Close details sheet when swiping to prevent stale data
-
-    if (dir === 'right') {
-      const newLikeCount = likeCount + 1;
-      setLikeCount(newLikeCount);
-      if (newLikeCount === 2) {
-        setMatchedRestaurant(currentRestaurant);
-        setTimeout(() => {
-          setShowMatch(true);
-        }, 200); // Show match screen after card exit animation
-      }
-    }
 
     setTimeout(() => {
       if (dir === 'right') {
@@ -100,10 +104,6 @@ export function SwipeView({ restaurants, onMatch, onBack, participants, users }:
       setCurrentIndex((prev) => prev + 1);
       setDirection(null);
     }, 200);
-  };
-
-  const handleContinueSwiping = () => {
-    setShowMatch(false);
   };
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -128,7 +128,16 @@ export function SwipeView({ restaurants, onMatch, onBack, participants, users }:
           <p className="text-gray-500 mb-8">
             You've viewed all the restaurants. We'll let you know when your friends have voted.
           </p>
-          <Button onClick={onBack} variant="outline" className="w-full h-12 rounded-xl">
+
+          {extraContent}
+
+          {isHost && onLoadMore && (
+            <Button onClick={onLoadMore} className="w-full h-12 rounded-xl mt-4 bg-red-600 hover:bg-red-700 text-white font-semibold">
+              Load more options
+            </Button>
+          )}
+
+          <Button onClick={onBack} variant="outline" className="w-full h-12 rounded-xl mt-4">
             Back to Filters
           </Button>
         </div>
@@ -136,112 +145,6 @@ export function SwipeView({ restaurants, onMatch, onBack, participants, users }:
     );
   }
 
-  if (showMatch) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        className="h-[100dvh] bg-red-600 flex flex-col items-center justify-center p-6 text-center z-50 fixed inset-0"
-      >
-        <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden flex flex-col">
-          <div className="pt-8 pb-4 px-8 flex flex-col items-center">
-            <div className="h-4 w-full" />
-            <div className="flex items-center justify-center gap-3 mb-4 mr-8">
-              <div
-                className="rounded-full flex items-center justify-center shrink-0 animate-bounce"
-                style={{ width: '3.5rem', height: '3.5rem', backgroundColor: '#fee2e2' }}
-              >
-                <Heart className="size-8 text-red-600 fill-red-600" />
-              </div>
-              <h2 className="text-3xl font-bold text-gray-900">It's a Match!</h2>
-            </div>
-          </div>
-
-          {/* Hero Image with Details Overlay */}
-          <div className="relative w-full shrink-0 group" style={{ height: '8rem' }}>
-            <ImageWithFallback
-              src={matchedRestaurant?.image || ''}
-              alt={matchedRestaurant?.name || ''}
-              className="w-full h-full object-cover object-center"
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                background: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.7) 50%, rgba(0,0,0,0) 100%)',
-              }}
-            />
-
-            <div className="absolute bottom-0 left-0 right-0 p-6 text-white text-left">
-              <h3 className="text-2xl font-bold mb-2">{matchedRestaurant?.name}</h3>
-              <div className="flex items-center gap-2 text-sm font-medium flex-wrap">
-                <span className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded-full backdrop-blur-sm">
-                  <Star className="size-3 fill-yellow-400 text-yellow-400" />
-                  {matchedRestaurant?.rating}
-                </span>
-                <Badge variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm">
-                  {matchedRestaurant?.cuisine}
-                </Badge>
-                <span className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded-full backdrop-blur-sm">
-                  {Array(matchedRestaurant?.cost || 1).fill('$').join('')}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 flex flex-col gap-6">
-            {/* Going With Section */}
-            <div className="flex flex-col gap-3 items-start">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                <Check className="size-3" /> Everyone wants to go here
-              </span>
-              <div className="flex -space-x-2 overflow-hidden">
-                {(users && users.length > 0 ? users : Array.from({ length: Math.min(participants, 4) })).slice(0, 4).map((user, i) => {
-                  const initials = (user as Participant)?.initials || ['AL', 'SA', 'YO', 'MI'][i % 4];
-                  return (
-                    <div
-                      key={i}
-                      className="inline-flex h-10 w-10 rounded-full ring-2 ring-white items-center justify-center text-xs font-bold text-gray-600"
-                      style={{ backgroundColor: ['#f3f4f6', '#e5e7eb', '#d1d5db', '#9ca3af'][i % 4] }}
-                    >
-                      {initials}
-                    </div>
-                  );
-                })}
-              </div>
-              {participants > 4 && (
-                <div className="text-xs text-gray-500 font-medium pl-1">
-                  +{participants - 4} more
-                </div>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col gap-6 w-full">
-              <Button
-                className="w-full bg-red-600 hover:bg-red-700 text-white h-14 text-lg rounded-2xl shadow-lg shadow-red-200"
-                onClick={() => {
-                  // Handle reservation
-                }}
-              >
-                Reserve Table
-              </Button>
-
-              <button
-                onClick={() => {
-                  setShowMatch(false);
-                  setMatchedRestaurant(null);
-                }}
-                className="text-gray-500 font-medium hover:text-gray-800 transition-colors text-sm"
-              >
-                Keep swiping
-              </button>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col overflow-hidden">

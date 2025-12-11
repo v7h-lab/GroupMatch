@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Users, ArrowLeft, MapPin, UtensilsCrossed, DollarSign, Play, User, Calendar, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export interface Participant {
   id: string;
@@ -11,6 +11,7 @@ export interface Participant {
   name: string;
   joined: boolean;
   isSelf?: boolean;
+  isHost?: boolean;
 }
 
 interface WaitingViewProps {
@@ -26,60 +27,24 @@ interface WaitingViewProps {
   isLoading?: boolean;
   onStart: (participants: Participant[]) => void;
   onBack: () => void;
+  participants: Participant[];
+  isHost?: boolean;
 }
 
-const MOCK_NAMES = ['Alex', 'Sam', 'Jordan', 'Taylor', 'Casey', 'Riley', 'Morgan', 'Quinn'];
-
-export function WaitingView({ filters, date, time, rating, totalParticipants, isLoading, onStart, onBack }: WaitingViewProps) {
-  const [participants, setParticipants] = useState<Participant[]>([
-    { id: 'self', initials: 'YO', name: 'You', joined: true, isSelf: true }
-  ]);
-
-  // Generate placeholders
-  const placeholders = Array(totalParticipants - 1).fill(null).map((_, i) => ({
+export function WaitingView({ filters, date, time, rating, totalParticipants, participants, isLoading, onStart, onBack, isHost }: WaitingViewProps) {
+  // Generate placeholders for remaining spots
+  const placeholders = Array(Math.max(0, totalParticipants - participants.length)).fill(null).map((_, i) => ({
     id: `placeholder-${i}`,
     initials: '',
     name: 'Waiting...',
-    joined: false
+    joined: false,
+    isSelf: false,
+    isHost: false
   }));
 
-  const [displayList, setDisplayList] = useState([...participants, ...placeholders]);
+  const displayList = [...participants, ...placeholders];
 
-  // Simulate users joining
-  useEffect(() => {
-    let joinedCount = 1;
-    const max = totalParticipants;
-
-    const interval = setInterval(() => {
-      if (joinedCount >= max) {
-        clearInterval(interval);
-        return;
-      }
-
-      // Add a new user
-      const newName = MOCK_NAMES[joinedCount - 1] || `User ${joinedCount + 1}`;
-      const newParticipant = {
-        id: `user-${joinedCount}`,
-        initials: newName.substring(0, 2).toUpperCase(),
-        name: newName,
-        joined: true
-      };
-
-      setDisplayList(prev => {
-        const newList = [...prev];
-        newList[joinedCount] = newParticipant;
-        return newList;
-      });
-
-      joinedCount++;
-      toast.success(`${newName} joined the session!`);
-
-    }, 2500); // New user every 2.5 seconds
-
-    return () => clearInterval(interval);
-  }, [totalParticipants]);
-
-  const joinedCount = displayList.filter(p => p.joined).length;
+  const joinedCount = participants.length;
   const progress = (joinedCount / totalParticipants) * 100;
   const canStart = !isLoading && joinedCount >= 2;
 
@@ -268,9 +233,16 @@ export function WaitingView({ filters, date, time, rating, totalParticipants, is
                     <User className="size-6 opacity-50" />
                   )}
                 </div>
-                <span className={`text-xs font-medium text-center max-w-[4rem] truncate ${participant.joined ? 'text-gray-700' : 'text-gray-400'}`}>
-                  {participant.name}
-                </span>
+                <div className="flex flex-col items-center">
+                  <span className={`text-xs font-medium text-center max-w-[4rem] truncate ${participant.joined ? 'text-gray-700' : 'text-gray-400'}`}>
+                    {participant.name}
+                  </span>
+                  {participant.isHost && (
+                    <span className="text-xs font-medium text-gray-500">
+                      (Host)
+                    </span>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
@@ -293,10 +265,10 @@ export function WaitingView({ filters, date, time, rating, totalParticipants, is
           <Button
             className="w-full h-14 text-lg font-semibold bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 rounded-xl gap-2"
             onClick={() => onStart(displayList.filter(p => p.joined))}
-            disabled={isLoading || (joinedCount < 2 && totalParticipants > 1)}
+            disabled={isLoading || (joinedCount < 2 && totalParticipants > 1) || (isHost === false)}
           >
             <Play className="size-5 fill-current" />
-            {isLoading ? 'Loading Restaurants...' : joinedCount === totalParticipants ? 'Start Swiping!' : 'Start Now Anyway'}
+            {isLoading ? 'Loading Restaurants...' : (isHost === false ? 'Waiting for Host...' : (joinedCount === totalParticipants ? 'Start Swiping!' : 'Start Now Anyway'))}
           </Button>
           {joinedCount < totalParticipants && (
             <p className="text-center text-xs text-gray-400 mt-3">

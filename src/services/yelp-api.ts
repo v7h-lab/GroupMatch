@@ -14,6 +14,7 @@ interface UserPreferences {
   date?: string;
   time?: string;
   minRating?: number;
+  excludeNames?: string[];
 }
 
 interface YelpBusiness {
@@ -73,7 +74,11 @@ export async function fetchRestaurants(preferences: UserPreferences): Promise<Re
     ? `with a rating of at least ${preferences.minRating} stars`
     : '';
 
-  const query = `Recommend popular ${cuisineStr} restaurants ${locationStr} ${costStr} ${ratingStr} with reviews.`;
+  let query = `Recommend popular ${cuisineStr} restaurants ${locationStr} ${costStr} ${ratingStr} with reviews.`;
+
+  if (preferences.excludeNames && preferences.excludeNames.length > 0) {
+    query += ` Do not include these restaurants: ${preferences.excludeNames.join(', ')}.`;
+  }
 
   console.log('Yelp API Request:', {
     url: YELP_API_URL,
@@ -101,23 +106,56 @@ export async function fetchRestaurants(preferences: UserPreferences): Promise<Re
       headers['Authorization'] = `Bearer ${YELP_API_KEY}`;
     }
 
-    const response = await fetch(YELP_API_URL, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(requestBody)
-    });
+    const MAX_RETRIES = 3;
+    let attempt = 0;
+    let response;
 
-    console.log('Yelp API Response Status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Yelp API Error Body:', errorText);
+    while (attempt < MAX_RETRIES) {
       try {
-        const errorData = JSON.parse(errorText);
-        throw new Error(errorData.error?.description || `API Error: ${response.status}`);
-      } catch (e) {
-        throw new Error(`API Error: ${response.status} - ${errorText}`);
+        response = await fetch(YELP_API_URL, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(requestBody)
+        });
+
+        console.log(`Yelp API Response Status (Attempt ${attempt + 1}):`, response.status);
+
+        if (response.ok) {
+          break; // Success, exit loop
+        }
+
+        if (response.status >= 500) {
+          // Server error, throw to trigger retry
+          throw new Error(`Server Error: ${response.status}`);
+        } else {
+          // Client error (4xx), fail immediately
+          const errorText = await response.text();
+          console.error('Yelp API Error Body:', errorText);
+          try {
+            const errorData = JSON.parse(errorText);
+            throw new Error(errorData.error?.description || `API Error: ${response.status}`);
+          } catch (e) {
+            throw new Error(`API Error: ${response.status} - ${errorText}`);
+          }
+        }
+      } catch (error: any) {
+        attempt++;
+        console.warn(`API Attempt ${attempt} failed:`, error.message);
+
+        if (attempt >= MAX_RETRIES) {
+          // If we've exhausted retries, throw the last error
+          throw error;
+        }
+
+        // Wait before retrying (Exponential Backoff: 1s, 2s, 4s)
+        const delay = Math.pow(2, attempt - 1) * 1000;
+        console.log(`Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
+    }
+
+    if (!response) {
+      throw new Error('Failed to get response from Yelp API');
     }
 
     const data: YelpAIResponse = await response.json();
