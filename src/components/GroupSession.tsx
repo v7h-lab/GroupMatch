@@ -488,19 +488,21 @@ export default function GroupSession() {
                 <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-white rounded-3xl shadow-xl p-8 text-center max-w-md w-full"
+                    className="bg-white rounded-3xl shadow-xl p-6 text-center max-w-md w-full"
                 >
-                    <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <CheckCircle className="size-10 text-green-600" />
+                    <div className="flex items-center justify-center gap-3 mb-2">
+                        <div className="bg-green-100 p-2 rounded-full flex items-center justify-center">
+                            <CheckCircle className="size-6 text-green-600" />
+                        </div>
+                        <h1 className="text-2xl font-bold text-gray-900">It's a Match!</h1>
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">It's a Match!</h1>
-                    <p className="text-gray-500 mb-8">Everyone wants to go to...</p>
+                    <p className="text-gray-500 mb-6 text-sm">Everyone wants to go to...</p>
 
-                    <div className="rounded-2xl overflow-hidden mb-6 shadow-md">
-                        <img src={match.image} alt={match.name} className="w-full h-48 object-cover" />
-                        <div className="p-4 bg-gray-50">
-                            <h2 className="font-bold text-xl">{match.name}</h2>
-                            <p className="text-gray-500">{match.cuisine} • {match.location}</p>
+                    <div className="rounded-2xl overflow-hidden mb-4 shadow-md">
+                        <img src={match.image} alt={match.name} className="w-full h-40 object-cover" />
+                        <div className="p-3 bg-gray-50">
+                            <h2 className="font-bold text-lg">{match.name}</h2>
+                            <p className="text-sm text-gray-500">{match.cuisine} • {match.location}</p>
                         </div>
                     </div>
 
@@ -512,9 +514,9 @@ export default function GroupSession() {
                             Book Now
                         </button>
                     ) : (
-                        <div className="w-full bg-gray-100 text-gray-500 py-4 rounded-xl font-medium text-lg text-center">
+                        <p className="w-full text-gray-500 py-4 font-medium text-lg text-center">
                             Host will make the reservation
-                        </div>
+                        </p>
                     )}
 
                     {sessionData.groupSize > 2 && (
