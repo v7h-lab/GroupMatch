@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Copy, Check, Users, ArrowLeft, Share2, Play, Minus, Plus } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface ShareViewProps {
   url: string;
@@ -47,14 +47,18 @@ export function ShareView({ url, onBack, onStartSession }: ShareViewProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="p-4 sticky top-0 z-10" style={{ backgroundColor: 'transparent' }}>
-        <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full hover:bg-gray-100">
-          <ArrowLeft className="size-6 text-gray-600" />
-        </Button>
-      </header>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 pt-6">
+      {/* Top Nav Area */}
+      <div className="w-full max-w-md mb-4 flex items-center">
+        <button
+          onClick={onBack}
+          className="p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+        >
+          <ArrowLeft className="size-6" />
+        </button>
+      </div>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto w-full -mt-20">
+      <main className="flex-1 flex flex-col items-center justify-center p-0 text-center max-w-md mx-auto w-full">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}

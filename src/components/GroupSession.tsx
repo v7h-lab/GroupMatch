@@ -8,58 +8,80 @@ import { SwipeView, Restaurant } from './swipe-view';
 import { Toaster, toast } from 'sonner';
 import { fetchRestaurants } from '../services/yelp-api';
 import { motion } from 'motion/react';
-import { Star, MapPin, Phone, Globe, Clock, CheckCircle } from 'lucide-react';
+import { Star, MapPin, Phone, Globe, Clock, CheckCircle, ArrowLeft } from 'lucide-react';
 
 // Mock Reservation Page Component
 function ReservationView({ restaurant, onBack, groupSize, time, date }: { restaurant: Restaurant, onBack: () => void, groupSize?: number, time?: string, date?: string }) {
     return (
-        <div className="min-h-screen bg-white p-4">
-            <button onClick={onBack} className="mb-4 text-gray-600 font-medium">← Back</button>
-            <div className="relative h-64 rounded-3xl overflow-hidden mb-6">
-                <img src={restaurant.image} alt={restaurant.name} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
-                    <h1 className="text-3xl font-bold text-white">{restaurant.name}</h1>
-                </div>
+        <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 pt-6">
+            {/* Top Nav Area */}
+            <div className="w-full max-w-md mb-4 flex items-center">
+                <button
+                    onClick={onBack}
+                    className="p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                    <ArrowLeft className="size-6" />
+                </button>
             </div>
 
-            <div className="space-y-6">
-                <div className="flex items-center gap-3 text-gray-700">
-                    <MapPin className="text-red-600" />
-                    <span>{restaurant.location}</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-700">
-                    <Phone className="text-red-600" />
-                    <span>(555) 123-4567</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-700">
-                    <Globe className="text-red-600" />
-                    <a href="#" className="underline">Visit Website</a>
-                </div>
-                <div className="flex items-center gap-3 text-gray-700">
-                    <Clock className="text-red-600" />
-                    <span>Open Now • Closes 10 PM</span>
+            {/* Main Card */}
+            <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden">
+                <div className="relative h-56">
+                    <img src={restaurant.image} alt={restaurant.name} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-6">
+                        <h1 className="text-3xl font-bold text-white leading-tight">{restaurant.name}</h1>
+                    </div>
                 </div>
 
-                <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                    <h3 className="font-bold text-lg mb-4">Make a Reservation</h3>
-
-                    {/* Session Summary */}
-                    <div className="mb-6 space-y-2">
-                        <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">Group Size</span>
-                            <span className="font-medium text-gray-900">{groupSize || 2} People</span>
+                <div className="p-6 space-y-6">
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-3 text-gray-700">
+                            <div className="bg-red-50 p-2 rounded-full shrink-0">
+                                <MapPin className="text-red-600 size-5" />
+                            </div>
+                            <span className="font-medium">{restaurant.location}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">Date & Time</span>
-                            <span className="font-medium text-gray-900">
-                                {date ? new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Today'} • {time || 'Now'}
-                            </span>
+                        <div className="flex items-center gap-3 text-gray-700">
+                            <div className="bg-red-50 p-2 rounded-full shrink-0">
+                                <Phone className="text-red-600 size-5" />
+                            </div>
+                            <span className="font-medium">(555) 123-4567</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-700">
+                            <div className="bg-red-50 p-2 rounded-full shrink-0">
+                                <Globe className="text-red-600 size-5" />
+                            </div>
+                            <a href="#" className="underline font-medium hover:text-red-600">Visit Website</a>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-700">
+                            <div className="bg-red-50 p-2 rounded-full shrink-0">
+                                <Clock className="text-red-600 size-5" />
+                            </div>
+                            <span className="font-medium">Open Now • Closes 10 PM</span>
                         </div>
                     </div>
 
-                    <button className="w-full bg-red-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-red-200 hover:bg-red-700 transition-colors">
-                        Book Table
-                    </button>
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col gap-4">
+                        <h3 className="font-bold text-lg text-gray-900">Make a Reservation</h3>
+
+                        {/* Session Summary */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between text-sm items-center">
+                                <span className="text-gray-500">Group Size</span>
+                                <span className="font-bold text-gray-900 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100">{groupSize || 2} People</span>
+                            </div>
+                            <div className="flex justify-between text-sm items-center">
+                                <span className="text-gray-500">Date & Time</span>
+                                <span className="font-bold text-gray-900 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100">
+                                    {date ? new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Today'} • {time || 'Now'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <button className="w-full bg-red-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-red-200 hover:bg-red-700 transition-colors">
+                            Book Table
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
