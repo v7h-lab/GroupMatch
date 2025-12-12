@@ -6,7 +6,7 @@ GroupTable (formerly YelpMatch) solves the "where should we eat?" dilemma by com
 
 🔗 **[Live Demo](https://fabulous-smakager-c0d743.netlify.app/)**
 
-![GroupTable Hero Image](./uploaded_image_1765508362641.png)
+![GroupTable Hero Image](public/screenshots/uploaded_image_1765508362641.png)
 
 ## 📖 Overview
 
@@ -86,11 +86,11 @@ graph TD
 
 | Landing Page | Session Lobby |
 |:---:|:---:|
-| ![Landing Page](./uploaded_image_1765483783562.png) | ![Lobby](./uploaded_image_1765484661623.png) |
+| ![Landing Page](public/screenshots/uploaded_image_1765483783562.png) | ![Lobby](public/screenshots/uploaded_image_1765484661623.png) |
 
 | Swipe Interface | Match Screen |
 |:---:|:---:|
-| ![Swipe](./uploaded_image_1765484792180.png) | ![Match](./uploaded_image_1765486134070.png) |
+| ![Swipe](public/screenshots/uploaded_image_1765484792180.png) | ![Match](public/screenshots/uploaded_image_1765486134070.png) |
 
 ## 🚀 Getting Started
 
