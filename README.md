@@ -86,11 +86,11 @@ graph TD
 
 | Landing Page | Session Lobby |
 |:---:|:---:|
-| ![Landing Page](public/screenshots/uploaded_image_1765483783562.png) | ![Lobby](public/screenshots/uploaded_image_1765484661623.png) |
+| ![Landing Page](public/screenshots/uploaded_image_1765487889198.png) | ![Lobby](public/screenshots/uploaded_image_1765483783562.png) |
 
 | Swipe Interface | Match Screen |
 |:---:|:---:|
-| ![Swipe](public/screenshots/uploaded_image_1765484792180.png) | ![Match](public/screenshots/uploaded_image_1765486134070.png) |
+| ![Swipe](public/screenshots/uploaded_image_1765243517378.png) | ![Match](public/screenshots/uploaded_image_1765504854723.png) |
 
 ## 🚀 Getting Started
 
