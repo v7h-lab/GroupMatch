@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, ArrowLeft, MapPin, UtensilsCrossed, DollarSign, Play, User, Calendar, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, ArrowLeft, MapPin, UtensilsCrossed, DollarSign, Play, User, Calendar, Clock, ChevronDown, ChevronUp, Leaf } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { toast } from 'sonner';
@@ -19,6 +19,7 @@ interface WaitingViewProps {
     cuisine: string[];
     location: string[];
     cost: number[];
+    dietary?: string[];
   };
   date?: string;
   time?: string;
@@ -141,6 +142,22 @@ export function WaitingView({ filters, date, time, rating, totalParticipants, pa
                       </div>
                     </div>
                   </div>
+
+                  {filters.dietary && filters.dietary.length > 0 && (
+                    <div className="flex items-start gap-3">
+                      <Leaf className="size-5 text-red-500 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900 mb-1">Dietary</div>
+                        <div className="flex flex-wrap gap-1">
+                          {filters.dietary.map(d => (
+                            <Badge key={d} variant="secondary" className="bg-green-50 text-green-700 border-green-100">
+                              {d}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex items-start gap-3">
                     <DollarSign className="size-5 text-red-500 mt-0.5" />

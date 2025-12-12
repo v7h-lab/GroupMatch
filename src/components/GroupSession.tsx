@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, onSnapshot, updateDoc, arrayUnion, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -114,6 +114,8 @@ export default function GroupSession() {
         const unsubscribe = onSnapshot(doc(db, 'sessions', sessionId), (doc) => {
             if (doc.exists()) {
                 const data = doc.data();
+                console.log("Session Data Loaded:", data); // Debug log
+                console.log("Session Filters:", data.filters); // Debug log
                 setSessionData(data);
 
                 if (data.restaurants) {
@@ -175,7 +177,8 @@ export default function GroupSession() {
                 email,
                 id: userId,
                 joinedAt: new Date().toISOString(),
-                initials: name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+                initials: name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),
+                finished: false
             };
 
             const sessionRef = doc(db, 'sessions', sessionId);
@@ -191,6 +194,76 @@ export default function GroupSession() {
     };
 
     const [isStarting, setIsStarting] = useState(false);
+
+    // Track last action timestamp to prevent duplicate toasts
+    const lastActionTimeRef = useRef<number>(0);
+
+    const isHost = sessionData?.hostId && currentUser?.id === sessionData.hostId;
+
+    // Check if current user has finished
+    const hasUserFinished = sessionData?.participants?.find((p: any) => p.id === currentUser?.id)?.finished;
+
+    // Check if all participants have finished
+    const allFinished = sessionData?.participants?.every((p: any) => p.finished);
+
+    // Waiting state: User finished but others haven't
+    const waitingForOthers = hasUserFinished && !allFinished;
+
+    const handleUserFinished = async () => {
+        if (!sessionId || !currentUser) return;
+
+        // Only update if not already marked as finished
+        if (!hasUserFinished) {
+            const updatedParticipants = sessionData.participants.map((p: any) =>
+                p.id === currentUser.id ? { ...p, finished: true } : p
+            );
+
+            await updateDoc(doc(db, 'sessions', sessionId), {
+                participants: updatedParticipants
+            });
+        }
+    };
+
+    const handleBackToFilters = async () => {
+        if (!sessionId) return;
+
+        // Host ending the session
+        await updateDoc(doc(db, 'sessions', sessionId), {
+            status: 'ended'
+        });
+        navigate('/');
+    };
+
+    // Listen for session end and load more notifications
+    useEffect(() => {
+        if (!sessionData) return;
+
+        // Redirect if session ended
+        if (sessionData.status === 'ended') {
+            toast.info("Host has ended the session");
+            navigate('/');
+            return;
+        }
+
+        // Notify if host loaded more options
+        if (sessionData.lastAction && !isHost) {
+            const actionTime = sessionData.lastAction.timestamp;
+
+            // Only show toast if this is a new action we haven't seen
+            if (actionTime > lastActionTimeRef.current) {
+                if (sessionData.lastAction.type === 'loadingMore') {
+                    toast.info("Host is finding new options...");
+                } else if (sessionData.lastAction.type === 'loadMore') {
+                    // We can optionally show another toast here when data actually arrives, 
+                    // or just rely on the first one. The previous logic showed "Host chose to view more options"
+                    // which is now redundant if we show "Host is finding new options...".
+                    // Let's keep it simple and just update the ref so we don't show old toasts.
+                }
+                lastActionTimeRef.current = actionTime;
+            }
+        }
+
+    }, [sessionData?.status, sessionData?.lastAction, navigate, isHost]);
 
     // Background Prefetching
     useEffect(() => {
@@ -212,7 +285,8 @@ export default function GroupSession() {
                     costs: sessionData.filters.costs,
                     minRating: sessionData.filters.minRating,
                     date: sessionData.filters.date,
-                    time: sessionData.filters.time
+                    time: sessionData.filters.time,
+                    dietary: sessionData.filters.dietary
                 });
 
                 await updateDoc(doc(db, 'sessions', sessionId), {
@@ -254,7 +328,8 @@ export default function GroupSession() {
                         costs: sessionData.filters.costs,
                         minRating: sessionData.filters.minRating,
                         date: sessionData.filters.date,
-                        time: sessionData.filters.time
+                        time: sessionData.filters.time,
+                        dietary: sessionData.filters.dietary
                     });
 
                     await updateDoc(doc(db, 'sessions', sessionId), {
@@ -276,7 +351,7 @@ export default function GroupSession() {
         }
     };
 
-    const isHost = sessionData?.hostId && currentUser?.id === sessionData.hostId;
+
 
     const handleMatch = async (restaurant: Restaurant) => {
         if (!sessionId || !currentUser || !sessionData) return;
@@ -310,6 +385,11 @@ export default function GroupSession() {
     const handleLoadMore = async () => {
         if (!sessionId || !sessionData) return;
         try {
+            // Notify others immediately
+            await updateDoc(doc(db, 'sessions', sessionId), {
+                lastAction: { type: 'loadingMore', timestamp: Date.now() }
+            });
+
             toast.info("Finding new options...");
 
             const currentNames = sessionData.restaurants.map((r: Restaurant) => r.name);
@@ -321,23 +401,37 @@ export default function GroupSession() {
                 minRating: sessionData.filters.minRating,
                 date: sessionData.filters.date,
                 time: sessionData.filters.time,
+                dietary: sessionData.filters.dietary,
                 excludeNames: currentNames
             });
 
             if (newRestaurants.length === 0) {
                 toast.error("No new options found!");
+                // Reset lastAction so others don't see "Loading..." forever
+                await updateDoc(doc(db, 'sessions', sessionId), {
+                    lastAction: { type: 'loadMoreEmpty', timestamp: Date.now() }
+                });
                 return;
             }
+
+            // Reset finished status for all participants
+            const resetParticipants = sessionData.participants.map((p: any) => ({ ...p, finished: false }));
 
             await updateDoc(doc(db, 'sessions', sessionId), {
                 status: 'swiping',
                 matchId: null,
                 votes: {},
-                restaurants: newRestaurants // Replace list
+                restaurants: newRestaurants, // Replace list
+                participants: resetParticipants,
+                lastAction: { type: 'loadMore', timestamp: Date.now() }
             });
         } catch (error) {
             console.error("Error loading more:", error);
             toast.error("Failed to load more options");
+            // Reset lastAction on error
+            await updateDoc(doc(db, 'sessions', sessionId), {
+                lastAction: { type: 'loadMoreError', timestamp: Date.now() }
+            });
         }
     };
 
@@ -427,6 +521,7 @@ export default function GroupSession() {
                         cuisine: sessionData.filters.cuisines,
                         location: sessionData.filters.locations,
                         cost: sessionData.filters.costs,
+                        dietary: sessionData.filters.dietary,
                     }}
                     date={sessionData.filters.date}
                     time={sessionData.filters.time}
@@ -447,6 +542,9 @@ export default function GroupSession() {
         );
     }
 
+
+
+
     if (sessionData?.status === 'swiping') {
         // Calculate ranked list for the extraContent
         const votes = sessionData?.votes || {};
@@ -457,30 +555,40 @@ export default function GroupSession() {
             .sort((a, b) => b.voteCount - a.voteCount)
             .slice(0, 3);
 
-        const rankedListContent = (
+        // Only show top picks if group size > 2
+        const showTopPicks = sessionData.groupSize > 2;
+
+        const rankedListContent = showTopPicks ? (
             <div className="w-full mb-6">
                 <h3 className="font-bold text-gray-900 mb-4 text-left">Top Picks So Far</h3>
                 <div className="space-y-3">
-                    {ranked.map((r, index) => (
-                        <div key={r.id} className="bg-gray-50 p-3 rounded-xl flex gap-3 items-center text-left">
-                            <div className="font-bold text-lg text-gray-400">#{index + 1}</div>
-                            <img src={r.image} alt={r.name} className="w-12 h-12 rounded-lg object-cover" />
-                            <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-gray-900 text-sm truncate">{r.name}</h4>
-                                <div className="text-xs text-gray-500">{r.voteCount} votes</div>
+                    {ranked
+                        .filter(r => r.voteCount > 0) // Only show if at least 1 vote
+                        .map((r, index) => (
+                            <div key={r.id} className="bg-gray-50 p-3 rounded-xl flex gap-3 items-center text-left">
+                                <div className="font-bold text-lg text-gray-400">#{index + 1}</div>
+                                <img src={r.image} alt={r.name} className="w-12 h-12 rounded-lg object-cover" />
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="font-bold text-gray-900 text-sm truncate">{r.name}</h4>
+                                    <div className="text-xs text-gray-500">{r.voteCount} votes</div>
+                                </div>
                             </div>
+                        ))}
+                    {ranked.filter(r => r.voteCount > 0).length === 0 && (
+                        <div className="text-center text-gray-400 text-sm py-4 italic">
+                            No votes yet
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
-        );
+        ) : null;
 
         return (
             <>
                 <Toaster position="top-center" />
                 <SwipeView
                     restaurants={restaurants}
-                    onBack={() => navigate('/')}
+                    onBack={handleBackToFilters}
                     onMatch={handleMatch}
                     participants={sessionData.participants.length}
                     users={sessionData.participants}
@@ -488,6 +596,9 @@ export default function GroupSession() {
                     onReserve={(restaurant) => setViewReservation(restaurant)}
                     isHost={isHost}
                     onLoadMore={handleLoadMore}
+                    onFinished={handleUserFinished}
+                    waitingForOthers={waitingForOthers}
+                    isLoadingMore={sessionData.lastAction?.type === 'loadingMore'}
                 />
             </>
         );

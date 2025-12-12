@@ -15,6 +15,7 @@ interface UserPreferences {
   time?: string;
   minRating?: number;
   excludeNames?: string[];
+  dietary?: string[];
 }
 
 interface YelpBusiness {
@@ -74,7 +75,15 @@ export async function fetchRestaurants(preferences: UserPreferences): Promise<Re
     ? `with a rating of at least ${preferences.minRating} stars`
     : '';
 
-  let query = `Recommend popular ${cuisineStr} restaurants ${locationStr} ${costStr} ${ratingStr} with reviews.`;
+  const dietaryStr = preferences.dietary && preferences.dietary.length > 0
+    ? `suitable for ${preferences.dietary.map(d => d.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu, '').trim()).join(' and ')} diets`
+    : '';
+
+  const timeStr = preferences.date && preferences.time
+    ? `open on ${preferences.date} at ${preferences.time}`
+    : '';
+
+  let query = `Recommend popular ${cuisineStr} restaurants ${locationStr} ${costStr} ${ratingStr} ${dietaryStr} ${timeStr} with reviews.`;
 
   if (preferences.excludeNames && preferences.excludeNames.length > 0) {
     query += ` Do not include these restaurants: ${preferences.excludeNames.join(', ')}.`;
@@ -217,7 +226,7 @@ export async function fetchRestaurants(preferences: UserPreferences): Promise<Re
     }
 
     // Map Yelp businesses to our Restaurant interface
-    return businesses.map((b, index) => {
+    return businesses.map((b: any, index: number) => {
       // Construct a location string
       let locationDisplay = b.location?.city || 'Unknown';
       if (b.location?.address1) {
@@ -233,7 +242,7 @@ export async function fetchRestaurants(preferences: UserPreferences): Promise<Re
       }
 
       // Extract reviews from response.text highlights and contextual_info
-      const reviews = [];
+      const reviews: { user: string; rating: number; text: string }[] = [];
 
       // First, add highlights from the parsed response.text
       const highlights = businessReviews[b.id] || [];

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { UtensilsCrossed, DollarSign, ArrowRight, ArrowLeft, Star } from 'lucide-react';
+import { UtensilsCrossed, DollarSign, ArrowRight, ArrowLeft, Star, Leaf } from 'lucide-react';
 import { FilterSection } from './filter-section';
 import { LocationSearch } from './location-search';
 import { DateTimePicker } from './date-time-picker';
@@ -46,6 +46,17 @@ const ratingOptions = [
     { label: '3.5+', value: 3.5 },
     { label: '4.0+', value: 4.0 },
     { label: '4.5+', value: 4.5 },
+];
+
+const dietaryOptions = [
+    '🥬 Vegetarian',
+    '🌱 Vegan',
+    '🌾 Gluten-Free',
+    '🥩 Paleo',
+    '🍖 Keto',
+    '🕌 Halal',
+    '✡️ Kosher',
+    '🥜 Nut-Free',
 ];
 
 const mockRestaurants: Restaurant[] = [
@@ -191,6 +202,7 @@ export default function Home() {
     const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
     const [selectedCosts, setSelectedCosts] = useState<number[]>([]);
     const [selectedRating, setSelectedRating] = useState<number>(0);
+    const [selectedDietary, setSelectedDietary] = useState<string[]>([]);
     const [sessionParticipants, setSessionParticipants] = useState(2);
 
     const toggleFilter = <T extends string | number>(
@@ -245,6 +257,7 @@ export default function Home() {
             setFilterStep(2);
         } else {
             console.log("Step 2. Creating session...");
+            console.log("Selected Dietary:", selectedDietary); // Debug log
             // Create Session in Firestore
             setIsSubmitting(true);
             try {
@@ -263,6 +276,7 @@ export default function Home() {
                         time: selectedTime,
                         locations: selectedLocations,
                         cuisines: selectedCuisines,
+                        dietary: selectedDietary,
                         costs: selectedCosts,
                         minRating: selectedRating
                     },
@@ -324,7 +338,7 @@ export default function Home() {
     // I will need to refine the session creation logic in the next step.
 
     const activeFiltersCount =
-        selectedCuisines.length + selectedLocations.length + selectedCosts.length + (selectedRating > 0 ? 1 : 0);
+        selectedCuisines.length + selectedDietary.length + selectedLocations.length + selectedCosts.length + (selectedRating > 0 ? 1 : 0);
 
     // Use fetched restaurants if available, otherwise filter mock data as fallback
     const restaurantsToUse = fetchedRestaurants.length > 0 ? fetchedRestaurants : mockRestaurants;
@@ -403,7 +417,7 @@ export default function Home() {
                             </h1>
                         </div>
 
-                        {(filterStep === 1 ? (selectedDate || selectedTime || selectedLocations.length > 0) : (selectedCuisines.length > 0 || selectedCosts.length > 0 || selectedRating > 0)) && (
+                        {(filterStep === 1 ? (selectedDate || selectedTime || selectedLocations.length > 0) : (selectedCuisines.length > 0 || selectedDietary.length > 0 || selectedCosts.length > 0 || selectedRating > 0)) && (
                             <motion.button
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
@@ -414,6 +428,7 @@ export default function Home() {
                                         setSelectedLocations([]);
                                     } else {
                                         setSelectedCuisines([]);
+                                        setSelectedDietary([]);
                                         setSelectedCosts([]);
                                         setSelectedRating(0);
                                     }
@@ -463,6 +478,15 @@ export default function Home() {
                                 selected={selectedCuisines}
                                 onToggle={(value) => toggleFilter(value, selectedCuisines, setSelectedCuisines)}
                                 limit={12}
+                            />
+
+                            <FilterSection
+                                title="Dietary Preferences"
+                                icon={<Leaf className="size-4" />}
+                                options={dietaryOptions}
+                                selected={selectedDietary}
+                                onToggle={(value) => toggleFilter(value, selectedDietary, setSelectedDietary)}
+                                limit={8}
                             />
 
                             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">

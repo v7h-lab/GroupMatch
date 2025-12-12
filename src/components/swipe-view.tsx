@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'motion/react';
-import { X, Heart, Star, MapPin, DollarSign, Info, ArrowLeft, Phone, Check } from 'lucide-react';
+import { X, Heart, Star, MapPin, DollarSign, Info, ArrowLeft, Phone, Check, Clock } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from './ui/sheet';
@@ -67,9 +67,12 @@ interface SwipeViewProps {
   onReserve?: (restaurant: Restaurant) => void;
   isHost?: boolean;
   onLoadMore?: () => void;
+  onFinished?: () => void;
+  waitingForOthers?: boolean;
+  isLoadingMore?: boolean;
 }
 
-export function SwipeView({ restaurants, onMatch, onBack, participants, users, extraContent, onReserve, isHost, onLoadMore }: SwipeViewProps) {
+export function SwipeView({ restaurants, onMatch, onBack, participants, users, extraContent, onReserve, isHost, onLoadMore, onFinished, waitingForOthers, isLoadingMore }: SwipeViewProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -92,6 +95,13 @@ export function SwipeView({ restaurants, onMatch, onBack, participants, users, e
   }, [firstId]);
 
   const currentRestaurant = restaurants[currentIndex];
+
+  // Notify when finished
+  useEffect(() => {
+    if (!currentRestaurant && onFinished) {
+      onFinished();
+    }
+  }, [currentRestaurant, onFinished]);
 
   const handleSwipe = (dir: 'left' | 'right') => {
     setDirection(dir);
@@ -119,27 +129,54 @@ export function SwipeView({ restaurants, onMatch, onBack, participants, users, e
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
         <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full">
           <div
-            className="rounded-full flex items-center justify-center mx-auto mb-6 shrink-0"
-            style={{ width: '6rem', height: '6rem', backgroundColor: '#dcfce7' }}
+            className={`rounded-full flex items-center justify-center mx-auto mb-6 shrink-0 ${waitingForOthers ? 'bg-yellow-100' : isLoadingMore ? 'bg-blue-100' : 'bg-green-100'}`}
+            style={{ width: '6rem', height: '6rem' }}
           >
-            <Check className="size-12 text-green-600" />
+            {waitingForOthers ? (
+              <Clock className="size-12 text-yellow-600" />
+            ) : isLoadingMore ? (
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            ) : (
+              <Check className="size-12 text-green-600" />
+            )}
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">All Caught Up!</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {isLoadingMore
+              ? "Finding new spots..."
+              : waitingForOthers
+                ? "Waiting for friends..."
+                : "No match so far"}
+          </h2>
           <p className="text-gray-500 mb-8">
-            You've viewed all the restaurants. We'll let you know when your friends have voted.
+            {isLoadingMore
+              ? "Hang tight! The host is finding more great spots for you..."
+              : waitingForOthers
+                ? "Sit tight! We'll let you know when everyone has finished voting."
+                : isHost
+                  ? "You've viewed all the restaurants. Try loading more options."
+                  : "Waiting for host to continue or end session"}
           </p>
 
           {extraContent}
 
-          {isHost && onLoadMore && (
-            <Button onClick={onLoadMore} className="w-full h-12 rounded-xl mt-4 bg-red-600 hover:bg-red-700 text-white font-semibold">
-              Load more options
-            </Button>
+          {!waitingForOthers && isHost && (
+            <>
+              {onLoadMore && (
+                <Button onClick={onLoadMore} className="w-full h-12 rounded-xl mt-4 bg-red-600 hover:bg-red-700 text-white font-semibold">
+                  Load more options
+                </Button>
+              )}
+              <Button onClick={onBack} variant="outline" className="w-full h-12 rounded-xl mt-4">
+                Back to Filters
+              </Button>
+            </>
           )}
 
-          <Button onClick={onBack} variant="outline" className="w-full h-12 rounded-xl mt-4">
-            Back to Filters
-          </Button>
+          {waitingForOthers && (
+            <div className="text-sm text-gray-400 italic mt-4">
+              Waiting for others to finish...
+            </div>
+          )}
         </div>
       </div>
     );
@@ -190,7 +227,7 @@ export function SwipeView({ restaurants, onMatch, onBack, participants, users, e
                   variant="ghost"
                   size="icon"
                   className="rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 border-none"
-                  onClick={(e) => {
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                     e.stopPropagation();
                     setShowDetails(true);
                   }}
@@ -254,8 +291,8 @@ export function SwipeView({ restaurants, onMatch, onBack, participants, users, e
           style={{ backgroundColor: '#ef4444' }}
           className="size-16 rounded-full text-white shadow-lg shadow-red-200 hover:scale-110 transition-all hover:text-white"
           onClick={() => handleSwipe('right')}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ef4444'}
+          onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => e.currentTarget.style.backgroundColor = '#dc2626'}
+          onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => e.currentTarget.style.backgroundColor = '#ef4444'}
         >
           <Heart className="size-8 fill-white" />
         </Button>
@@ -382,8 +419,8 @@ export function SwipeView({ restaurants, onMatch, onBack, participants, users, e
                     handleSwipe('right');
                     setShowDetails(false);
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ef4444'}
+                  onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                  onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => e.currentTarget.style.backgroundColor = '#ef4444'}
                 >
                   <Heart className="size-8 fill-white" />
                 </Button>

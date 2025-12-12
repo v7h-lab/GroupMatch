@@ -97,22 +97,53 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange }: DateT
                             </button>
                         </PopoverTrigger>
                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1 rounded-md bg-white" align="start" style={{ scrollbarWidth: 'thin', maxHeight: '240px', overflowY: 'auto', width: 'var(--radix-popover-trigger-width)' }}>
-                            {timeOptions.map((option) => (
-                                <button
-                                    key={option}
-                                    onClick={() => {
-                                        onTimeChange(option);
-                                        setIsOpen(false);
-                                    }}
-                                    className={cn(
-                                        "w-full text-left px-3 py-3 text-sm rounded-lg transition-colors flex items-center justify-between",
-                                        time === option ? "bg-red-50 text-red-700 font-medium" : "hover:bg-gray-100 text-gray-900"
-                                    )}
-                                >
-                                    {option}
-                                    {time === option && <Check className="size-4 text-red-600" />}
-                                </button>
-                            ))}
+                            {timeOptions.map((option) => {
+                                const isPastTime = (() => {
+                                    if (!date) return false;
+
+                                    // Parse selected date
+                                    const [year, month, day] = date.split('-').map(Number);
+                                    const selectedDateObj = new Date(year, month - 1, day);
+                                    const now = new Date();
+
+                                    // Check if selected date is today
+                                    const isToday = selectedDateObj.getDate() === now.getDate() &&
+                                        selectedDateObj.getMonth() === now.getMonth() &&
+                                        selectedDateObj.getFullYear() === now.getFullYear();
+
+                                    if (!isToday) return false;
+
+                                    // Parse option time
+                                    const [timeStr, period] = option.split(' ');
+                                    let [hours, minutes] = timeStr.split(':').map(Number);
+                                    if (period === 'PM' && hours !== 12) hours += 12;
+                                    if (period === 'AM' && hours === 12) hours = 0;
+
+                                    const optionMinutes = hours * 60 + minutes;
+                                    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+                                    return optionMinutes < currentMinutes;
+                                })();
+
+                                return (
+                                    <button
+                                        key={option}
+                                        disabled={isPastTime}
+                                        onClick={() => {
+                                            onTimeChange(option);
+                                            setIsOpen(false);
+                                        }}
+                                        className={cn(
+                                            "w-full text-left px-3 py-3 text-sm rounded-lg transition-colors flex items-center justify-between",
+                                            time === option ? "bg-red-50 text-red-700 font-medium" : "hover:bg-gray-100 text-gray-900",
+                                            isPastTime && "opacity-50 cursor-not-allowed hover:bg-transparent text-gray-400"
+                                        )}
+                                    >
+                                        {option}
+                                        {time === option && <Check className="size-4 text-red-600" />}
+                                    </button>
+                                );
+                            })}
                         </PopoverContent>
                     </Popover>
                 </div>
