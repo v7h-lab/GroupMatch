@@ -99,6 +99,10 @@ graph TD
 |:---:|:---:|
 | ![Swipe](public/screenshots/dine%20swipe.png) | ![Match](public/screenshots/dine%20match%20screen.png) |
 
+| Ranked Choice |
+|:---:|
+| ![Ranked Choice](public/screenshots/dine%20ranked.png) |
+
 ## 🚀 Getting Started
 
 ### Prerequisites
