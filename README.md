@@ -33,6 +33,7 @@ Unlike standard restaurant finders, GroupTable uses **Yelp's AI API** to underst
 
 GroupTable is built on a modern serverless stack, ensuring low latency and high scalability.
 
+```mermaid
 graph TD
     User[User Client]
     Host[Host Client]
@@ -67,6 +68,7 @@ graph TD
     Host -->|Updates Session| Firestore
     Firestore -->|Real-time Sync| User
     Firestore -->|Real-time Sync| Host
+```
 
 ### Data Flow
 1.  **Session Creation**: The host creates a document in Firestore with configuration and filters.
