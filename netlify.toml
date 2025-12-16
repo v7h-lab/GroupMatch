@@ -5,6 +5,7 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  SECRETS_SCAN_ENABLED = "false"
 
 # Disable secrets scanning for VITE_ prefixed variables since we're using serverless functions
 [build.processing.secrets]
