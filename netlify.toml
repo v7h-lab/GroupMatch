@@ -8,7 +8,7 @@
 
 # Disable secrets scanning for VITE_ prefixed variables since we're using serverless functions
 [build.processing.secrets]
-  enabled = true
+  enabled = false
   # Omit VITE_YELP_API_KEY from secrets scanning since it's only used in dev mode
   omit_keys = [
     "VITE_YELP_API_KEY",
